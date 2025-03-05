@@ -1,0 +1,42 @@
+package com.example.project.controller;
+
+import com.example.project.service.JsonModifyService;
+import com.example.project.model.MetaData;
+import com.example.project.service.MetaDataService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.*;
+
+@RestController
+@RequestMapping("/jsonReq")
+public class MetaDataController {
+
+    @Autowired
+    private MetaDataService metaDataService;
+
+    @Autowired
+    private JsonModifyService jsonModifyService;
+
+    /**
+     * API Endpoint to fetch metadata by ID and modify the JSON response.
+     * Example: GET /jsonReq/{id}
+     */
+    @GetMapping("/{id}")
+    public Map<String, Object> getJsonReq(@PathVariable String id) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Fetch metadata from database
+        Optional<MetaData> metaData = metaDataService.getMetaDataById(id);
+
+        if (metaData.isPresent()) {
+            response.put("id", id);
+            response.put("objects", metaData.get());
+        } else {
+            response.put("message", "No data found for given ID.");
+        }
+
+        // Modify JSON by adding the "default" tag
+        return jsonModifyService.modifyJson(id, response);
+    }
+}
