@@ -1,0 +1,30 @@
+const handleDownload = () => {
+    const jsonData = getJsonData(); // Function to fetch JSON from Live JSON Preview
+    const requiredFields = ["isParallelProcessing", "jobID", "sourceType"]; // Define required fields
+    const missingFields = [];
+
+    // Recursive function to validate required fields
+    const validateFields = (obj, path = "") => {
+        for (const key in obj) {
+            if (obj[key] !== null && typeof obj[key] === "object") {
+                validateFields(obj[key], `${path}${key}.`);
+            } else if (requiredFields.includes(key) && (obj[key] === null || obj[key] === "")) {
+                missingFields.push(`${path}${key}`);
+            }
+        }
+    };
+
+    validateFields(jsonData);
+
+    if (missingFields.length > 0) {
+        alert(`Missing required fields: ${missingFields.join(", ")}`);
+        return;
+    }
+
+    const jsonString = JSON.stringify(jsonData, null, 4);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "data.json";
+    link.click();
+};
