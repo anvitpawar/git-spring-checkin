@@ -1,0 +1,80 @@
+package com.example.project.service;
+
+import com.example.project.model.MetaData;
+import com.example.project.repository.MetaDataRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+
+@Service
+public class MetaDataService {
+
+    @Autowired
+    private MetaDataRepository metaDataRepository;
+
+    public Optional<MetaData> getMetaDataById(String id) {
+        Optional<MetaData> metaDataOpt = metaDataRepository.findById(id);
+        if (metaDataOpt.isEmpty()) {
+            System.out.println("Metadata NOT found in MongoDB!");
+            return Optional.empty();
+        }
+
+        MetaData metaData = metaDataOpt.get();
+        Map<String, Object> metaDataMap = metaData.getData(); // Get the metadata as a map
+
+        // Find "ingestions" dynamically in the metadata
+        Map<String, Object> ingestions = findIngestions(metaDataMap);
+
+        if (ingestions != null) {
+            // Modify ingestions by adding a "default" tag with required properties
+            modifyIngestions(ingestions);
+        }
+
+        return Optional.of(metaData);
+    }
+
+    /**
+     * Recursively searches for "ingestions" in the metadata structure.
+     */
+    private Map<String, Object> findIngestions(Map<String, Object> data) {
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            if ("ingestions".equals(entry.getKey()) && entry.getValue() instanceof Map) {
+                return (Map<String, Object>) entry.getValue(); // Found ingestions
+            }
+            // If the value is another nested map, search inside it
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> result = findIngestions((Map<String, Object>) entry.getValue());
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null; // Not found
+    }
+
+    /**
+     * Modifies "ingestions" by adding a "default" tag with required properties.
+     */
+    private void modifyIngestions(Map<String, Object> ingestions) {
+        if (!ingestions.containsKey("type") || !(ingestions.get("type") instanceof Map)) {
+            return; // No "type" object inside "ingestions"
+        }
+
+        Map<String, Object> typeObject = (Map<String, Object>) ingestions.get("type");
+        Map<String, Object> defaultTag = new HashMap<>();
+
+        for (Map.Entry<String, Object> entry : typeObject.entrySet()) {
+            if (entry.getValue() instanceof Map valueMap && valueMap.containsKey("required")) {
+                boolean isRequired = Boolean.parseBoolean(valueMap.get("required").toString());
+                if (isRequired && valueMap.containsKey("value")) {
+                    defaultTag.put(entry.getKey(), valueMap.get("value")); // Add required values to default
+                }
+            }
+        }
+
+        if (!defaultTag.isEmpty()) {
+            ingestions.put("default", defaultTag); // Insert default tag
+        }
+    }
+}
