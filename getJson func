@@ -41,18 +41,32 @@ const handleDownload = () => {
 
 
 const validateFields = (obj) => {
+    if (typeof obj !== "object" || obj === null) {
+        return obj !== "" && obj !== null && obj !== undefined; // Ensure value is non-empty
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.length > 0 && obj.every(validateFields); // Ensure array is not empty and validate elements
+    }
+
     for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
-            if (obj[key] === "" || obj[key] === null || obj[key] === undefined) {
-                console.warn(`Missing value for: ${key}`);
-                return false; // Stop and return false if any required field is empty
+            const value = obj[key];
+
+            if (typeof value === "string" && value.trim() === "") {
+                console.warn(`Empty value for key: ${key}`);
+                return false;
             }
-            if (typeof obj[key] === "object") {
-                if (!validateFields(obj[key])) {
-                    return false; // Recursively validate nested objects
-                }
+            
+            if (value === null || value === undefined) {
+                console.warn(`Missing value for key: ${key}`);
+                return false;
+            }
+
+            if (typeof value === "object" && !validateFields(value)) {
+                return false; // Recursively validate nested objects
             }
         }
     }
-    return true; // Return true if all required fields are filled
+    return true;
 };
