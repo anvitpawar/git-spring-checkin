@@ -1,30 +1,58 @@
 const handleDownload = () => {
-    const jsonData = getJsonData(); // Function to fetch JSON from Live JSON Preview
-    const requiredFields = ["isParallelProcessing", "jobID", "sourceType"]; // Define required fields
-    const missingFields = [];
+    try {
+        // Extract JSON from Live JSON Preview
+        const jsonData = getJsonData(); // Ensure this correctly fetches the JSON object
 
-    // Recursive function to validate required fields
-    const validateFields = (obj, path = "") => {
-        for (const key in obj) {
-            if (obj[key] !== null && typeof obj[key] === "object") {
-                validateFields(obj[key], `${path}${key}.`);
-            } else if (requiredFields.includes(key) && (obj[key] === null || obj[key] === "")) {
-                missingFields.push(`${path}${key}`);
+        if (!jsonData) {
+            alert("Invalid JSON data!");
+            return;
+        }
+
+        // Validate required fields (ensure no null, empty, or undefined values)
+        if (!validateFields(jsonData)) {
+            alert("Some required fields are missing or empty. Please fill them before downloading.");
+            return;
+        }
+
+        // Convert JSON object to a properly formatted string (4-space indentation)
+        const jsonString = JSON.stringify(jsonData, null, 4);
+
+        // Create a Blob with proper encoding
+        const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+
+        // Create a temporary anchor element
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "data.json";
+
+        // Trigger the download
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    } catch (error) {
+        console.error("Error while downloading JSON:", error);
+    }
+};
+
+
+
+
+const validateFields = (obj) => {
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            if (obj[key] === "" || obj[key] === null || obj[key] === undefined) {
+                console.warn(`Missing value for: ${key}`);
+                return false; // Stop and return false if any required field is empty
+            }
+            if (typeof obj[key] === "object") {
+                if (!validateFields(obj[key])) {
+                    return false; // Recursively validate nested objects
+                }
             }
         }
-    };
-
-    validateFields(jsonData);
-
-    if (missingFields.length > 0) {
-        alert(`Missing required fields: ${missingFields.join(", ")}`);
-        return;
     }
-
-    const jsonString = JSON.stringify(jsonData, null, 4);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "data.json";
-    link.click();
+    return true; // Return true if all required fields are filled
 };
