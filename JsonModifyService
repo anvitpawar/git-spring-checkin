@@ -1,0 +1,88 @@
+package com.example.project.service;
+
+import com.example.project.model.MetaData;
+import com.example.project.repository.MetaDataRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.*;
+
+@Service
+public class JsonModifyService {
+
+    @Autowired
+    private MetaDataRepository metaDataRepository;
+
+    // Memory map to store modified JSON responses
+    private final Map<String, LinkedHashMap<String, Object>> memoryMap = new LinkedHashMap<>();
+
+    /**
+     * Modifies JSON response by adding a "default" tag inside "ingestions"
+     * and inserting required properties from "type".
+     */
+    public Map<String, Object> modifyJson(String id, Map<String, Object> response) {
+        // Fetch metadata from MongoDB
+        Optional<MetaData> metaDataOpt = metaDataRepository.findById(id);
+
+        if (metaDataOpt.isPresent()) {
+            MetaData metaData = metaDataOpt.get();
+            Map<String, Object> metaDataMap = (Map<String, Object>) metaData.getData();
+
+            // Start recursive search for "ingestions" key
+            processIngestions(metaDataMap);
+
+            // Store modified JSON in memory
+            memoryMap.put(id, new LinkedHashMap<>(metaDataMap));
+            response.put("updated_data", metaDataMap);
+        } else {
+            response.put("message", "Metadata not found.");
+        }
+
+        return response;
+    }
+
+    /**
+     * Recursively traverses the metadata JSON to find "ingestions" and add a "default" tag.
+     */
+    private void processIngestions(Map<String, Object> jsonData) {
+        for (Map.Entry<String, Object> entry : jsonData.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> subMap = (Map<String, Object>) entry.getValue();
+
+                if (subMap.containsKey("ingestions")) {
+                    Map<String, Object> ingestions = (Map<String, Object>) subMap.get("ingestions");
+
+                    if (ingestions.containsKey("type")) {
+                        Map<String, Object> typeObject = (Map<String, Object>) ingestions.get("type");
+
+                        // Create "default" tag and add required properties
+                        Map<String, Object> defaultTag = extractRequiredFields(typeObject);
+
+                        // Insert default tag under ingestions
+                        ingestions.put("default", defaultTag);
+                    }
+                }
+                // Recursively check for deeper levels
+                processIngestions(subMap);
+            }
+        }
+    }
+
+    /**
+     * Extracts all properties where "required = true" from the "type" object.
+     */
+    private Map<String, Object> extractRequiredFields(Map<String, Object> typeObject) {
+        Map<String, Object> defaultTag = new LinkedHashMap<>();
+
+        for (Map.Entry<String, Object> entry : typeObject.entrySet()) {
+            if (entry.getValue() instanceof Map) {
+                Map<String, Object> propertyDetails = (Map<String, Object>) entry.getValue();
+
+                if (Boolean.TRUE.equals(propertyDetails.get("required"))) {
+                    defaultTag.put(entry.getKey(), propertyDetails.get("value"));
+                }
+            }
+        }
+
+        return defaultTag;
+    }
+}
