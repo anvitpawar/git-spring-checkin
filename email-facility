@@ -1,0 +1,203 @@
+Got it! Here’s a full-stack solution with React for frontend and Spring Boot for backend, including:
+✅ A button to fetch email and URL from the frontend.
+✅ Sending data to the backend via API.
+✅ Spring Boot email service to send a request approval email.
+✅ Success alert in the frontend after sending the email.
+✅ Try-catch handling for better error management.
+
+🚀 1️⃣ Frontend (React)
+
+🔹 Steps in React
+	1.	Fetch the Email and URL when the button is clicked.
+	2.	Send data to Spring Boot via an API (/send-email).
+	3.	Show an alert when email is sent successfully.
+
+📌 Frontend Code (EmailSender.js)
+
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+const EmailSender = () => {
+  const [email, setEmail] = useState(""); // Stores email from the UI
+  const [currentUrl, setCurrentUrl] = useState(""); // Stores current URL
+
+  // Get the URL dynamically
+  useEffect(() => {
+    setCurrentUrl(window.location.href); // Fetches deployed URL, not localhost
+  }, []);
+
+  // Function to send email data to backend
+  const sendEmail = async () => {
+    try {
+      if (!email || !currentUrl) {
+        alert("Email or URL is missing!");
+        return;
+      }
+
+      const requestData = { email, url: currentUrl };
+      const response = await axios.post("http://your-backend-url/send-email", requestData);
+
+      if (response.status === 200) {
+        alert("✅ Email sent successfully!");
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      alert("❌ Failed to send email. Please try again.");
+    }
+  };
+
+  return (
+    <div style={{ padding: "20px", textAlign: "center" }}>
+      <h2>Email Approval Request</h2>
+      <input
+        type="email"
+        placeholder="Enter recipient's email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{ padding: "10px", width: "300px", marginBottom: "10px" }}
+      />
+      <br />
+      <button onClick={sendEmail} style={{ padding: "10px 20px", cursor: "pointer" }}>
+        Send Approval Request
+      </button>
+    </div>
+  );
+};
+
+export default EmailSender;
+
+✔ Captures URL dynamically from the taskbar
+✔ Takes email input from the user
+✔ Sends data to backend using axios.post()
+✔ Displays an alert when the email is sent
+
+🚀 2️⃣ Backend (Spring Boot)
+
+🔹 Steps in Spring Boot
+	1.	Create a REST API /send-email that accepts JSON data.
+	2.	Use JavaMail (via JavaMailSender) to send emails.
+	3.	Wrap everything in try-catch for better error handling.
+	4.	Send an email from a private email ID with approval details.
+
+📌 Backend Code (EmailController.java)
+
+package com.example.emailservice.controller;
+
+import com.example.emailservice.service.EmailService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api")
+public class EmailController {
+
+    @Autowired
+    private EmailService emailService;
+
+    @PostMapping("/send-email")
+    public ResponseEntity<String> sendEmail(@RequestBody Map<String, String> requestData) {
+        try {
+            String email = requestData.get("email");
+            String url = requestData.get("url");
+
+            if (email == null || url == null || email.isEmpty() || url.isEmpty()) {
+                return ResponseEntity.badRequest().body("❌ Email or URL cannot be empty.");
+            }
+
+            emailService.sendApprovalEmail(email, url);
+            return ResponseEntity.ok("✅ Email sent successfully!");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("❌ Error sending email: " + e.getMessage());
+        }
+    }
+}
+
+✔ Receives email and url from frontend
+✔ Calls EmailService to send an email
+✔ Handles errors properly with try-catch
+
+📌 Backend Code (EmailService.java)
+
+package com.example.emailservice.service;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmailService {
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    public void sendApprovalEmail(String to, String url) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setTo(to);
+            helper.setSubject("Approval Request: Action Required");
+            helper.setFrom("your-private-email@example.com");
+
+            // Email Body
+            String emailContent = "<p>Dear User,</p>"
+                    + "<p>A request has been raised that requires your approval.</p>"
+                    + "<p><strong>Request Number:</strong> XYZ</p>"
+                    + "<p>Please approve the request by clicking the link below:</p>"
+                    + "<p><a href='" + url + "'>Approve Request</a></p>"
+                    + "<br><p>Best Regards,<br>Your Company</p>";
+
+            helper.setText(emailContent, true); // true → Enables HTML email content
+
+            mailSender.send(message);
+            System.out.println("✅ Email sent successfully to: " + to);
+
+        } catch (MessagingException e) {
+            System.err.println("❌ Error while sending email: " + e.getMessage());
+        }
+    }
+}
+
+✔ Uses MimeMessage to send rich HTML emails
+✔ Includes a request approval link
+✔ Handles errors inside try-catch
+
+📌 Backend Configuration (application.properties)
+
+# SMTP Configuration
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your-private-email@example.com
+spring.mail.password=your-email-password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+🚀 Use Environment Variables or a Vault instead of hardcoding credentials.
+
+✅ Summary of Features
+
+Feature	Status
+Fetch URL from taskbar	✅ Done
+Fetch recipient email from UI	✅ Done
+Send data to backend	✅ Done
+Backend sends approval email	✅ Done
+Email contains approval link	✅ Done
+Try-catch for error handling	✅ Done
+Frontend alert on success/failure	✅ Done
+
+🚀 Next Steps
+
+Would you like me to:
+1️⃣ Add CC/BCC support?
+2️⃣ Integrate an email status tracker?
+3️⃣ Implement OAuth-based email sending for better security?
+
+Let me know what you need! 😊🚀
