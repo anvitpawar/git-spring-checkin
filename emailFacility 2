@@ -1,0 +1,146 @@
+If you’re getting an error that says “No bean found for JavaMailSender”, it usually means that Spring Boot is not automatically configuring the mail sender. Let’s troubleshoot and fix it step by step.
+
+⸻
+
+✅ 1️⃣ Ensure Dependencies are Correct
+
+Your build.gradle file should have:
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.eclipse.angus:jakarta.mail:1.6.7'
+}
+
+Run:
+
+./gradlew build --refresh-dependencies
+
+to ensure everything is installed properly.
+
+⸻
+
+✅ 2️⃣ Check Your application.properties or application.yml
+
+Make sure you have the correct SMTP configurations:
+
+🔹 application.properties
+
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your-email@gmail.com
+spring.mail.password=your-email-password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+OR
+
+🔹 application.yml
+
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-email-password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+🔹 If you’re using Gmail, enable Less Secure Apps or configure OAuth.
+
+⸻
+
+✅ 3️⃣ Create a Bean for JavaMailSender
+
+If Spring Boot is not auto-configuring JavaMailSender, create it manually:
+
+🔹 MailConfig.java
+
+package com.example.emailservice.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+
+import java.util.Properties;
+
+@Configuration
+public class MailConfig {
+
+    @Bean
+    public JavaMailSender getJavaMailSender() {
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost("smtp.gmail.com");
+        mailSender.setPort(587);
+        mailSender.setUsername("your-email@gmail.com");
+        mailSender.setPassword("your-email-password");
+
+        Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.debug", "true"); // Enable debug logging
+
+        return mailSender;
+    }
+}
+
+✔ This manually defines JavaMailSender if Spring Boot fails to configure it automatically.
+
+⸻
+
+✅ 4️⃣ Inject JavaMailSender in Your Service Class
+
+🔹 EmailService.java
+
+package com.example.emailservice.service;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
+@Service
+public class EmailService {
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    public void sendApprovalEmail(String to, String url) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setTo(to);
+            helper.setSubject("Approval Request");
+            helper.setFrom("your-email@gmail.com");
+            helper.setText("Please approve request at: " + url, false);
+
+            mailSender.send(message);
+            System.out.println("✅ Email sent successfully to: " + to);
+        } catch (MessagingException e) {
+            System.err.println("❌ Error sending email: " + e.getMessage());
+        }
+    }
+}
+
+✔ Uses JavaMailSender for sending an email.
+✔ Handles errors using try-catch.
+
+⸻
+
+🔥 Final Steps
+
+1️⃣ Check Dependencies (gradlew build --refresh-dependencies).
+2️⃣ Ensure SMTP Configuration is Correct (application.properties).
+3️⃣ Define a Bean for JavaMailSender (MailConfig.java).
+4️⃣ Inject and Use JavaMailSender (EmailService.java).
+5️⃣ Run and Test the Email Sending!
+
+🚀 Let me know if you still face issues! 🚀
