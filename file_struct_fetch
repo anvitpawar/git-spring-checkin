@@ -1,0 +1,258 @@
+🚀 Step-by-Step Guide: GitHub OAuth + React + Spring Boot
+
+This guide will walk you through integrating GitHub OAuth API with a React frontend and a Spring Boot backend to:
+✅ Authenticate users via GitHub OAuth
+✅ Check repo access & permissions
+✅ Fetch file structure (for .json, .ksh, .hal, .config, .properties, .txt)
+✅ Upload new files to the same folder structure
+✅ Show step-by-step progress in React UI
+
+⸻
+
+🔹 Step 1: GitHub OAuth Setup
+
+Before coding, create a GitHub OAuth App:
+
+1️⃣ Go to GitHub Developer Settings
+2️⃣ Click “New OAuth App”
+3️⃣ Fill details:
+	•	Application Name: GitHub Repo Manager
+	•	Homepage URL: http://localhost:3000
+	•	Authorization Callback URL: http://localhost:8080/login/oauth2/code/github
+4️⃣ Click “Register Application”
+5️⃣ Copy Client ID and Client Secret
+
+⸻
+
+🔹 Step 2: Spring Boot Backend (OAuth + API Handling)
+
+Create a Spring Boot project with:
+	•	Spring Web
+	•	Spring Security
+	•	OAuth2 Client
+	•	Spring Boot Starter Web
+
+1️⃣ Add Dependencies (pom.xml)
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-oauth2-client</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+</dependencies>
+
+
+
+⸻
+
+2️⃣ Configure OAuth (application.yml)
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: YOUR_GITHUB_CLIENT_ID
+            client-secret: YOUR_GITHUB_CLIENT_SECRET
+            scope: read:user, repo
+        provider:
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+
+
+
+⸻
+
+3️⃣ Implement OAuth Login (SecurityConfig.java)
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/login", "/error").permitAll()
+                .anyRequest().authenticated()
+            )
+            .oauth2Login();
+
+        return http.build();
+    }
+}
+
+
+
+⸻
+
+4️⃣ Check User’s Repo Access (GitHubService.java)
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+
+@Service
+public class GitHubService {
+    private final String GITHUB_API_URL = "https://api.github.com/repos/";
+
+    public boolean checkRepoAccess(String repoName, String accessToken) {
+        String url = GITHUB_API_URL + repoName;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<String> response = new RestTemplate().exchange(url, HttpMethod.GET, entity, String.class);
+        return response.getStatusCode().is2xxSuccessful();
+    }
+}
+
+
+
+⸻
+
+5️⃣ Fetch File Structure (GitHubController.java)
+
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.util.*;
+
+@RestController
+@RequestMapping("/github")
+public class GitHubController {
+    @Autowired
+    private GitHubService gitHubService;
+
+    @GetMapping("/check-access")
+    public ResponseEntity<?> checkRepoAccess(@RequestParam String repoName, @RequestHeader("Authorization") String token) {
+        boolean hasAccess = gitHubService.checkRepoAccess(repoName, token);
+        return ResponseEntity.ok(Map.of("access", hasAccess));
+    }
+
+    @GetMapping("/fetch-files")
+    public ResponseEntity<?> fetchRepoFiles(@RequestParam String repoName, @RequestHeader("Authorization") String token) {
+        String apiUrl = "https://api.github.com/repos/" + repoName + "/git/trees/main?recursive=1";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        ResponseEntity<Map> response = new RestTemplate().exchange(apiUrl, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
+        List<Map<String, String>> tree = (List<Map<String, String>>) response.getBody().get("tree");
+
+        List<String> filePaths = new ArrayList<>();
+        for (Map<String, String> item : tree) {
+            if (item.get("type").equals("blob")) {
+                filePaths.add(item.get("path"));
+            }
+        }
+
+        return ResponseEntity.ok(Map.of("files", filePaths));
+    }
+}
+
+
+
+⸻
+
+🔹 Step 3: React Frontend
+
+Install dependencies:
+
+npm install axios react-router-dom
+
+
+
+⸻
+
+1️⃣ OAuth Login Button
+
+import React from "react";
+
+const Login = () => {
+  return (
+    <div>
+      <h2>Login with GitHub</h2>
+      <a href="http://localhost:8080/oauth2/authorization/github">
+        <button>Login with GitHub</button>
+      </a>
+    </div>
+  );
+};
+
+export default Login;
+
+
+
+⸻
+
+2️⃣ Fetch Repo Files and Upload
+
+import React, { useState } from "react";
+import axios from "axios";
+
+const GitHubManager = () => {
+  const [log, setLog] = useState([]);
+  const [files, setFiles] = useState([]);
+  const [repo, setRepo] = useState("");
+
+  const addLog = (message) => setLog((prev) => [...prev, message]);
+
+  const checkAccess = async () => {
+    addLog("Checking repository access...");
+    const res = await axios.get(`http://localhost:8080/github/check-access?repoName=${repo}`, {
+      headers: { Authorization: `Bearer YOUR_GITHUB_OAUTH_TOKEN` }
+    });
+    addLog(res.data.access ? "✅ Access granted!" : "❌ No access.");
+  };
+
+  const fetchFiles = async () => {
+    addLog("Fetching files...");
+    const res = await axios.get(`http://localhost:8080/github/fetch-files?repoName=${repo}`, {
+      headers: { Authorization: `Bearer YOUR_GITHUB_OAUTH_TOKEN` }
+    });
+    setFiles(res.data.files);
+    addLog(`📂 Found ${res.data.files.length} files.`);
+  };
+
+  return (
+    <div>
+      <h2>GitHub Repo Manager</h2>
+      <input type="text" placeholder="Repo Name" onChange={(e) => setRepo(e.target.value)} />
+      <button onClick={checkAccess}>Check Access</button>
+      <button onClick={fetchFiles}>Fetch Files</button>
+
+      <h3>Logs</h3>
+      <ul>{log.map((msg, i) => <li key={i}>{msg}</li>)}</ul>
+    </div>
+  );
+};
+
+export default GitHubManager;
+
+
+
+⸻
+
+🎯 Summary
+
+✔ GitHub OAuth login with Spring Boot
+✔ Check repo access & permissions
+✔ Fetch file structure
+✔ React UI for progress tracking
+
+Would you like me to add file uploads in React? 🚀
