@@ -1,3 +1,212 @@
+📌 Sample Input & Output for GitHub OAuth Integration with React & Spring Boot
+
+⸻
+
+🔹 Step 1: GitHub OAuth Authentication
+
+🔹 Input (User Logs in via GitHub)
+	•	Frontend Redirects User to GitHub OAuth:
+
+https://github.com/login/oauth/authorize?client_id=YOUR_CLIENT_ID&scope=repo
+
+
+	•	GitHub Returns an Authorization Code:
+
+code=abc123xyz
+
+
+	•	Backend Exchanges Code for OAuth Token:
+
+POST /login/oauth/access_token
+{
+  "client_id": "YOUR_CLIENT_ID",
+  "client_secret": "YOUR_SECRET",
+  "code": "abc123xyz"
+}
+
+
+
+🔹 Output (OAuth Token is Returned)
+
+{
+  "access_token": "gho_abc123xyz",
+  "token_type": "bearer",
+  "scope": "repo"
+}
+
+
+
+⸻
+
+🔹 Step 2: Repository Selection & Access Verification
+
+🔹 Input (User Chooses a Repository from UI)
+
+{
+  "selectedRepo": "repo1"
+}
+
+🔹 Backend Checks Access
+	•	API Call:
+
+GET /repos/{owner}/repo1
+Authorization: Bearer gho_abc123xyz
+
+
+	•	GitHub Response:
+
+{
+  "permissions": {
+    "pull": true,
+    "push": true,
+    "admin": false
+  }
+}
+
+
+
+🔹 Output (User Has Access)
+
+{
+  "status": "success",
+  "message": "User has write access to repo1"
+}
+
+
+
+⸻
+
+🔹 Step 3: Fetching Repository Folder Structure
+
+🔹 API Call
+
+GET /repos/{owner}/repo1/git/trees/main?recursive=1
+Authorization: Bearer gho_abc123xyz
+
+🔹 GitHub Response
+
+{
+  "tree": [
+    { "path": "config/settings.json", "type": "blob" },
+    { "path": "scripts/setup.ksh", "type": "blob" },
+    { "path": "src/main/config.properties", "type": "blob" },
+    { "path": "README.md", "type": "blob" }
+  ]
+}
+
+🔹 Output (Filtered Files)
+
+{
+  "files": [
+    "config/settings.json",
+    "scripts/setup.ksh",
+    "src/main/config.properties"
+  ]
+}
+
+
+
+⸻
+
+🔹 Step 4: Fetching Matching Files from MongoDB
+
+🔹 Input (Required Extensions)
+
+{
+  "extensions": [".json", ".ksh", ".hal", ".config", ".properties", ".txt"]
+}
+
+🔹 MongoDB Data
+
+[
+  { "filePath": "config/settings.json", "content": "{ 'theme': 'dark' }" },
+  { "filePath": "scripts/setup.ksh", "content": "echo 'Setup complete'" }
+]
+
+🔹 Output
+
+{
+  "filesToUpload": [
+    { "path": "config/settings.json", "content": "{ 'theme': 'dark' }" },
+    { "path": "scripts/setup.ksh", "content": "echo 'Setup complete'" }
+  ]
+}
+
+
+
+⸻
+
+🔹 Step 5: Displaying File Paths & Progress in UI
+
+🔹 UI Display
+
+📂 repo1
+   📄 config/settings.json
+   📄 scripts/setup.ksh
+   📄 src/main/config.properties
+
+⸻
+
+🔹 Step 6: Committing & Pushing Files
+
+🔹 Input (User Enters Commit Message & Presses Commit)
+
+{
+  "commitMessage": "Updated configuration files"
+}
+
+🔹 API Call to Upload File
+
+PUT /repos/{owner}/repo1/contents/config/settings.json
+Authorization: Bearer gho_abc123xyz
+Content-Type: application/json
+
+Body:
+
+{
+  "message": "Updated configuration files",
+  "content": "eyAndGhlbWUnOiAnZGFyayd9Cg==",
+  "branch": "main"
+}
+
+🔹 Output (GitHub Response)
+
+{
+  "commit": {
+    "sha": "abc987xyz",
+    "message": "Updated configuration files"
+  }
+}
+
+
+
+⸻
+
+🔹 Step 7: Showing Commit Status in UI
+
+🔹 UI Displays Commit Success
+
+✅ Commit Successful!
+
+⸻
+
+🎯 Summary of Input & Output
+
+Step	Input	API Call	Output
+1. OAuth Login	User logs in	Exchange Code for Token	OAuth Token Returned
+2. Repo Access Check	Selected repo = “repo1”	Check user permissions	User has write access
+3. Fetch Repo Structure	“repo1”	Get repo file tree	List of matching files
+4. Fetch MongoDB Files	Required extensions	Query MongoDB	Matching files returned
+5. Show UI Progress	Files to upload	N/A	Display file paths
+6. Commit & Push	User enters commit message	Upload files to GitHub	GitHub commit success
+7. Show Commit Status	Commit request	Check commit status	“Commit Successful”
+
+This covers the complete flow end to end. Do you need any modifications or enhancements? 🚀
+
+
+
+
+
 🔹 Step-by-Step Guide for Full GitHub Repository Integration
 
 This guide ensures:
