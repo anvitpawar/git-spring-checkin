@@ -1,0 +1,159 @@
+Here’s a structured PowerPoint (PPT) outline for your Email Classification using Generative AI project for the hackathon.
+
+⸻
+
+📌 PPT Structure for Hackathon Submission
+
+1️⃣ Title Slide
+
+📌 Content:
+	•	Project Title: AI-Powered Email Classification System
+	•	Hackathon Name & Date
+	•	Team Name & Members
+
+⸻
+
+2️⃣ Introduction
+
+📌 Content:
+	•	Brief overview of the project
+	•	Why is email classification important?
+	•	Target use case: Consumer Loans & Bank Lending Services
+
+🖼 Visual:
+	•	Iconic email processing image
+	•	Short 2-line mission statement
+
+⸻
+
+3️⃣ Problem Statement
+
+📌 Content:
+	•	Challenges in email processing:
+	•	Emails contain unstructured data (text & attachments).
+	•	High manual effort required to categorize and prioritize requests.
+	•	Duplicate and overlapping emails cause inefficiencies.
+	•	Need for an automated, intelligent, and scalable solution.
+
+🖼 Visual:
+	•	Infographic showing traditional vs AI-based email processing.
+
+⸻
+
+4️⃣ Solution Overview
+
+📌 Content:
+	•	Our system automatically classifies emails using Generative AI.
+	•	Extracts key information from email body & attachments.
+	•	Detects duplicate and overlapping emails for efficient processing.
+	•	Generates a structured result report with confidence scores.
+
+🖼 Visual:
+	•	High-level workflow diagram (simplified)
+	•	Before vs After automation comparison
+
+⸻
+
+5️⃣ Architecture Diagram
+
+📌 Content:
+	•	Show how the system works step-by-step:
+	1.	User uploads .eml file via React UI
+	2.	Backend extracts email text & attachments
+	3.	LLM-based agentic engine processes extracted data
+	4.	Classified results & reports are generated
+
+🖼 Visual:
+	•	System Architecture Diagram (the one we created)
+
+⸻
+
+6️⃣ Tech Stack
+
+📌 Content:
+	•	Frontend: React
+	•	Backend: Python (Flask)
+	•	LLM Engine: CrewAI + DeepSeek/Hugging Face
+	•	File Handling: .eml file parser
+	•	Report Generation: JSON structured output
+
+🖼 Visual:
+	•	Tech logos arranged in a neat layout
+
+⸻
+
+7️⃣ Key Features
+
+📌 Content:
+✔ Extracts email body & attachment content
+✔ Classifies email requests into categories
+✔ Assigns priority levels based on content
+✔ Detects duplicate & overlapping requests
+✔ Generates structured JSON reports
+
+🖼 Visual:
+	•	Feature icons with short descriptions
+
+⸻
+
+8️⃣ Challenges Faced
+
+📌 Content:
+	•	Handling diverse email formats (.eml, .pdf, .doc, etc.)
+	•	Processing large volumes of unstructured data
+	•	Tuning LLM for classification accuracy
+	•	Optimizing response time for real-world applications
+
+🖼 Visual:
+	•	Bullet points with icons (⚠️ warning signs for challenges)
+
+⸻
+
+9️⃣ Demo (If Applicable)
+
+📌 Content:
+	•	Show a short live demo or screenshots of the UI.
+	•	Explain how users interact with the system.
+
+🖼 Visual:
+	•	GIF or images of the email classification process.
+
+⸻
+
+🔟 Future Scope
+
+📌 Content:
+🚀 Next Steps & Improvements:
+	•	Support for more document types (scanned PDFs, emails with embedded tables).
+	•	Fine-tune LLM models for industry-specific classification.
+	•	Real-time email classification API integration for businesses.
+
+🖼 Visual:
+	•	Roadmap graphic showing future milestones
+
+⸻
+
+1️⃣1️⃣ Conclusion
+
+📌 Content:
+	•	Summary of the problem, solution, and impact.
+	•	How this system can reduce manual efforts and improve efficiency.
+	•	Call to action: Why this solution is innovative!
+
+🖼 Visual:
+	•	Final slide with key takeaways & appreciation note
+
+⸻
+
+1️⃣2️⃣ Q&A Slide
+
+📌 Content:
+	•	“Thank You!” + Contact Info
+	•	Encourage judges to ask questions
+
+🖼 Visual:
+	•	Clean and simple design
+
+⸻
+
+This PPT will make a strong impact at the hackathon! Want me to create the slides in a PowerPoint file for you? 🎯🚀
