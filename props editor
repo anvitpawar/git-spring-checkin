@@ -1,80 +1,103 @@
-Let’s design the Properties Editor with the new requirements:
+Absolutely! Let’s complete the Properties Editor with the remaining files based on your project structure.
 
 ⸻
 
-✅ 1. Project Structure
+✅ 1. Updated Project Structure
 
 properties-editor
-├── public
-│   ├── index.html
-└── src
-    ├── __mocks__          // Mock data folder
-    │   ├── propertiesMock.json
-    ├── components
-    │   ├── PropertiesEditor.jsx
-    │   ├── PreviewPane.jsx
-    ├── services
-    │   ├── apiService.js  // API service for backend calls
-    ├── utils
-    │   ├── logger.js      // Logging utility
-    ├── App.jsx
-    ├── App.css
-    ├── index.js
-    ├── setupTests.js      // Jest setup
+├── components_properties
+│   ├── previewPane.jsx
+│   ├── propertiesEditor.jsx
+├── services-properties
+│   ├── apiService.js
+├── dummy.txt                
+├── logger.js                
+├── propertiesEditor.module.css 
+└── testPropertiesEditor.js
 
 
 
 ⸻
 
-✅ 2. Mock Data (propertiesMock.json)
+✅ 2. components_properties/previewPane.jsx
 
-// __mocks__/propertiesMock.json
-[
-  { "key": "app.name", "value": "Properties Editor" },
-  { "key": "app.version", "value": "1.0.0" },
-  { "key": "app.environment", "value": "development" }
-]
+This component displays real-time updates.
+
+// components_properties/previewPane.jsx
+import React from 'react';
+
+const PreviewPane = ({ properties }) => {
+  return (
+    <div style={{ border: '1px solid #ccc', padding: '10px', marginTop: '20px' }}>
+      <h2>Real-Time Preview</h2>
+      <pre>
+        {properties.length ? (
+          properties.map((prop, index) => (
+            <div key={index}>
+              {prop.key} = {prop.value}
+            </div>
+          ))
+        ) : (
+          <p>No properties available.</p>
+        )}
+      </pre>
+    </div>
+  );
+};
+
+export default PreviewPane;
 
 
 
 ⸻
 
-✅ 3. API Service with Robust Error Handling (apiService.js)
+✅ 3. services-properties/apiService.js
 
-// src/services/apiService.js
+This file handles API calls, error handling, and mock data parsing.
+
+// services-properties/apiService.js
 import axios from 'axios';
+import { logError, logInfo } from '../logger';
+import mockData from '../dummy.txt';
 
 const BASE_URL = 'http://localhost:8080/properties';
 
-// GET Request - Fetch properties
 export const fetchProperties = async () => {
   try {
     const response = await axios.get(BASE_URL);
+    logInfo("Fetched properties from backend");
     return response.data;
   } catch (error) {
-    console.error("Failed to fetch properties:", error);
-    throw error;
+    logError("Backend fetch failed, loading mock data", error);
+    return parseMockData();
   }
 };
 
-// POST Request - Save properties
 export const updateProperties = async (properties) => {
   try {
-    const response = await axios.post(`${BASE_URL}/update`, properties);
-    return response.data;
+    await axios.post(`${BASE_URL}/update`, properties);
+    logInfo("Properties updated successfully");
   } catch (error) {
-    console.error("Failed to update properties:", error);
-    throw error;
+    logError("Failed to update properties", error);
   }
+};
+
+const parseMockData = () => {
+  return mockData.split('\n').map(line => {
+    const [key, value] = line.split('=');
+    return { key, value };
+  });
 };
 
 
 
 ⸻
 
-✅ 4. Logging Utility (logger.js)
+✅ 4. logger.js (Logging Utility)
 
-// src/utils/logger.js
+Provides detailed error and information logs.
+
+// logger.js
 export const logError = (message, error) => {
   console.error(`[ERROR]: ${message}`, error);
 };
@@ -87,72 +110,115 @@ export const logInfo = (message) => {
 
 ⸻
 
-✅ 5. Properties Editor Component with Auto-Save (PropertiesEditor.jsx)
+✅ 5. propertiesEditor.module.css
 
-// src/components/PropertiesEditor.jsx
+This file provides component-specific styling.
+
+/* propertiesEditor.module.css */
+.properties-editor {
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 400px;
+    margin-bottom: 20px;
+}
+
+.property {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.input-field {
+    flex: 1;
+}
+
+button {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+
+
+⸻
+
+✅ 6. dummy.txt (Mock Data)
+
+Simulates a backend response with properties.
+
+app.name=Properties Editor
+app.version=1.0.0
+app.environment=development
+
+
+
+⸻
+
+✅ 7. components_properties/propertiesEditor.jsx
+
+Main component for properties CRUD operations.
+
+// components_properties/propertiesEditor.jsx
 import React, { useState, useEffect } from 'react';
-import { logInfo, logError } from '../utils/logger';
+import { fetchProperties, updateProperties } from '../services-properties/apiService';
+import styles from '../propertiesEditor.module.css';
+import PreviewPane from './previewPane';
 
-const PropertiesEditor = ({ properties, onPropertiesChange, onSave }) => {
-  const [localProperties, setLocalProperties] = useState(properties);
+const PropertiesEditor = () => {
+  const [properties, setProperties] = useState([]);
   const [autoSaveTimer, setAutoSaveTimer] = useState(null);
 
   useEffect(() => {
-    setLocalProperties(properties);
-  }, [properties]);
+    loadProperties();
+  }, []);
 
-  // Auto-save changes after delay
+  const loadProperties = async () => {
+    const data = await fetchProperties();
+    setProperties(data);
+  };
+
   useEffect(() => {
-    if (autoSaveTimer) {
-      clearTimeout(autoSaveTimer);
-    }
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
     setAutoSaveTimer(
       setTimeout(() => {
-        onSave();
-        logInfo("Auto-saving properties");
-      }, 3000) // Auto-save every 3 seconds
+        updateProperties(properties);
+      }, 3000)
     );
-  }, [localProperties]);
+  }, [properties]);
 
-  // Handle input changes
   const handleChange = (index, key, value) => {
-    const updatedProperties = [...localProperties];
+    const updatedProperties = [...properties];
     updatedProperties[index] = { key, value };
-    setLocalProperties(updatedProperties);
-    onPropertiesChange(updatedProperties);
+    setProperties(updatedProperties);
   };
 
-  // Add new property
-  const addProperty = () => {
-    setLocalProperties([...localProperties, { key: '', value: '' }]);
-  };
-
-  // Remove property
-  const removeProperty = (index) => {
-    setLocalProperties(localProperties.filter((_, i) => i !== index));
-  };
+  const addProperty = () => setProperties([...properties, { key: '', value: '' }]);
+  const removeProperty = (index) => setProperties(properties.filter((_, i) => i !== index));
 
   return (
-    <div className="properties-editor">
+    <div className={styles['properties-editor']}>
       <h2>Properties Editor</h2>
-      {localProperties.map((property, index) => (
-        <div key={index} className="property">
+      {properties.map((property, index) => (
+        <div key={index} className={styles.property}>
           <input
             type="text"
             value={property.key}
-            placeholder="Key"
+            className={styles['input-field']}
             onChange={(e) => handleChange(index, e.target.value, property.value)}
+            placeholder="Key"
           />
           <input
             type="text"
             value={property.value}
-            placeholder="Value"
+            className={styles['input-field']}
             onChange={(e) => handleChange(index, property.key, e.target.value)}
+            placeholder="Value"
           />
           <button onClick={() => removeProperty(index)}>Delete</button>
         </div>
       ))}
       <button onClick={addProperty}>Add Property</button>
+      <PreviewPane properties={properties} />
     </div>
   );
 };
@@ -163,95 +229,30 @@ export default PropertiesEditor;
 
 ⸻
 
-✅ 6. Main App with Error Handling (App.jsx)
+✅ 8. Jest Test Case (testPropertiesEditor.js)
 
-// src/App.jsx
-import React, { useState, useEffect } from 'react';
-import PropertiesEditor from './components/PropertiesEditor';
-import PreviewPane from './components/PreviewPane';
-import { fetchProperties, updateProperties } from './services/apiService';
-import { logError, logInfo } from './utils/logger';
-import mockData from './__mocks__/propertiesMock.json';
-import './App.css';
+Validates core functionalities.
 
-function App() {
-  const [properties, setProperties] = useState([]);
-
-  useEffect(() => {
-    loadProperties();
-  }, []);
-
-  // Fetch data dynamically from mock or backend
-  const loadProperties = async () => {
-    try {
-      const response = await fetchProperties();
-      setProperties(response);
-      logInfo("Properties loaded from backend");
-    } catch (error) {
-      logError("Error fetching from backend, using mock data", error);
-      setProperties(mockData);
-    }
-  };
-
-  // Save changes to backend
-  const saveProperties = async () => {
-    try {
-      await updateProperties(properties);
-      logInfo("Properties updated successfully");
-    } catch (error) {
-      logError("Error updating properties", error);
-    }
-  };
-
-  // Handle properties change
-  const handlePropertiesChange = (updatedProperties) => {
-    setProperties(updatedProperties);
-  };
-
-  return (
-    <div className="app-container">
-      <PropertiesEditor
-        properties={properties}
-        onPropertiesChange={handlePropertiesChange}
-        onSave={saveProperties}
-      />
-      <PreviewPane properties={properties} />
-    </div>
-  );
-}
-
-export default App;
-
-
-
-⸻
-
-✅ 7. Jest Test Cases (PropertiesEditor.test.js)
-
-// src/components/PropertiesEditor.test.js
+// testPropertiesEditor.js
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import PropertiesEditor from './PropertiesEditor';
-
-const mockProperties = [
-  { key: "app.name", value: "Properties Editor" }
-];
+import PropertiesEditor from './components_properties/propertiesEditor';
 
 describe("PropertiesEditor Component", () => {
-  it("renders properties correctly", () => {
-    render(<PropertiesEditor properties={mockProperties} onPropertiesChange={() => {}} />);
-    expect(screen.getByPlaceholderText("Key")).toHaveValue("app.name");
-    expect(screen.getByPlaceholderText("Value")).toHaveValue("Properties Editor");
+  it("renders correctly", () => {
+    render(<PropertiesEditor />);
+    expect(screen.getByText("Properties Editor")).toBeInTheDocument();
   });
 
-  it("adds a new property", () => {
-    render(<PropertiesEditor properties={mockProperties} onPropertiesChange={() => {}} />);
+  it("adds a property", () => {
+    render(<PropertiesEditor />);
     fireEvent.click(screen.getByText("Add Property"));
-    expect(screen.getAllByPlaceholderText("Key").length).toBe(2);
+    expect(screen.getAllByPlaceholderText("Key").length).toBeGreaterThan(1);
   });
 
   it("deletes a property", () => {
-    render(<PropertiesEditor properties={mockProperties} onPropertiesChange={() => {}} />);
+    render(<PropertiesEditor />);
+    fireEvent.click(screen.getByText("Add Property"));
     fireEvent.click(screen.getByText("Delete"));
     expect(screen.queryByPlaceholderText("Key")).toBeNull();
   });
@@ -261,39 +262,12 @@ describe("PropertiesEditor Component", () => {
 
 ⸻
 
-✅ 8. Spring Boot Backend (Updated Controller)
-
-// PropertiesController.java
-@RestController
-@RequestMapping("/properties")
-@CrossOrigin(origins = "http://localhost:3000")
-public class PropertiesController {
-
-    private List<Map<String, String>> properties = new ArrayList<>();
-
-    @GetMapping
-    public List<Map<String, String>> getProperties() {
-        return properties;
-    }
-
-    @PostMapping("/update")
-    public ResponseEntity<String> updateProperties(@RequestBody List<Map<String, String>> updatedProperties) {
-        properties = updatedProperties;
-        return ResponseEntity.ok("Properties updated successfully");
-    }
-}
-
-
+🎉 Outcome:
+	1.	Complete Folder Structure with all necessary files.
+	2.	Error Handling, Logging, Jest Tests, and Auto-Save included.
+	3.	Dynamic Data Population using a mock file.
+	4.	Future-Proof Design for easy integration and extension.
 
 ⸻
 
-🎉 Result:
-	1.	Robust error handling with logging.
-	2.	Auto-save for seamless experience.
-	3.	Mock data fallback.
-	4.	Jest tests for reliability.
-
-What do you think of this setup? Should I elaborate on any part?
-
-Awesome! Glad you liked it! If you need more assistance or want to add more features, just let me know. Happy coding!
-
+Is this the complete setup you envisioned, or is there anything else you’d like me to refine or expand on?
