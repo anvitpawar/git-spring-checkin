@@ -28,15 +28,30 @@ describe("ApproversTable Component", () => {
     expect(screen.getByText("App3")).toBeInTheDocument();
   });
 
+  it("calls setApprovalStatus on dropdown selection", () => {
+    render(<ApproversTable items={mockItems} />);
+
+    // Ensure 'Others' is initially selected
+    expect(screen.getByText("Status")).toBeInTheDocument();
+
+    // Simulate dropdown selection
+    fireEvent.click(screen.getByText("Status")); // Open the dropdown
+    fireEvent.click(screen.getByText("Approved")); // Select "Approved"
+
+    // Verify filtering works
+    expect(screen.getByText("App1")).toBeInTheDocument();
+    expect(screen.queryByText("App2")).not.toBeInTheDocument();
+    expect(screen.queryByText("App3")).not.toBeInTheDocument();
+  });
+
   it("filters items based on selected approval status", () => {
     render(<ApproversTable items={mockItems} />);
 
-    // Simulate dropdown selection
     fireEvent.click(screen.getByText("Status"));
-    fireEvent.click(screen.getByText("Approved"));
+    fireEvent.click(screen.getByText("Rejected"));
 
-    expect(screen.getByText("App1")).toBeInTheDocument();
-    expect(screen.queryByText("App2")).not.toBeInTheDocument();
+    expect(screen.getByText("App2")).toBeInTheDocument();
+    expect(screen.queryByText("App1")).not.toBeInTheDocument();
     expect(screen.queryByText("App3")).not.toBeInTheDocument();
   });
 
