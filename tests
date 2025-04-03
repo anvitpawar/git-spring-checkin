@@ -1,0 +1,32 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import InputField from './InputField';
+import { Input } from 'semantic-ui-react';
+
+describe("InputField Component", () => {
+  it("renders the label correctly", () => {
+    render(<InputField name="Test Label" />);
+    expect(screen.getByText("Test Label")).toBeInTheDocument();
+  });
+
+  it("renders the field as input when isInput is true", () => {
+    render(<InputField name="Input Test" field={{ placeholder: "Enter text" }} isInput={true} />);
+    expect(screen.getByPlaceholderText("Enter text")).toBeInTheDocument();
+  });
+
+  it("renders the field as plain text when isInput is false", () => {
+    render(<InputField name="Plain Text" field="Sample Text" isInput={false} />);
+    expect(screen.getByText("Sample Text")).toBeInTheDocument();
+  });
+
+  it("applies the field class when isInput is false", () => {
+    render(<InputField name="Class Test" field="Sample Text" isInput={false} />);
+    expect(screen.getByText("Sample Text").closest('div')).toHaveClass("field");
+  });
+
+  it("does not apply the field class when isInput is true", () => {
+    render(<InputField name="Class Test" field={{ placeholder: "Enter text" }} isInput={true} />);
+    expect(screen.getByPlaceholderText("Enter text").closest('div')).not.toHaveClass("field");
+  });
+});
