@@ -1,67 +1,66 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ApproversTable from './ApproversTable';
+import DiaasHeader from './DiaasHeader';
 
-describe("ApproversTable Component", () => {
-  const mockItems = [
-    { applicationName: "App1", domainName: "Domain1", columnName: "Column1", status: "Approved" },
-    { applicationName: "App2", domainName: "Domain2", columnName: "Column2", status: "Rejected" },
-    { applicationName: "App3", domainName: "Domain3", columnName: "Column3", status: "Others" },
+describe("DiaasHeader Component", () => {
+  const mockHeaderItems = [
+    {
+      title: "Onboard",
+      subHeadings: [{ title: "Application", subMenu: ["View/Modify", "Add"] }],
+    },
+    {
+      title: "Pre-Processing",
+      subHeadings: [{ title: "Application", subMenu: ["View/Modify", "Add"] }],
+    },
+    {
+      title: "Questionnaire",
+      subHeadings: [{ title: "Application", subMenu: ["View/Modify", "Add"] }],
+    }
   ];
 
-  it("renders the table headers correctly", () => {
-    render(<ApproversTable items={mockItems} />);
+  it("renders the header titles correctly", () => {
+    render(<DiaasHeader headerItems={mockHeaderItems} />);
 
-    expect(screen.getByText("Application Name")).toBeInTheDocument();
-    expect(screen.getByText("Data Domain")).toBeInTheDocument();
-    expect(screen.getByText("Column Name")).toBeInTheDocument();
-    expect(screen.getByText("Status")).toBeInTheDocument();
-    expect(screen.getByText("View")).toBeInTheDocument();
+    // Check main menu items
+    expect(screen.getByText("Onboard")).toBeInTheDocument();
+    expect(screen.getByText("Pre-Processing")).toBeInTheDocument();
+    expect(screen.getByText("Questionnaire")).toBeInTheDocument();
   });
 
-  it("renders all items when approval status is 'Others'", () => {
-    render(<ApproversTable items={mockItems} />);
+  it("toggles submenu visibility on click", () => {
+    render(<DiaasHeader headerItems={mockHeaderItems} />);
 
-    expect(screen.getByText("App1")).toBeInTheDocument();
-    expect(screen.getByText("App2")).toBeInTheDocument();
-    expect(screen.getByText("App3")).toBeInTheDocument();
+    // Submenu should be hidden initially
+    expect(screen.queryByText("View/Modify")).not.toBeInTheDocument();
+    expect(screen.queryByText("Add")).not.toBeInTheDocument();
+
+    // Click to show submenu
+    fireEvent.click(screen.getByText("Onboard"));
+
+    // Check if submenu appears
+    expect(screen.getByText("View/Modify")).toBeInTheDocument();
+    expect(screen.getByText("Add")).toBeInTheDocument();
   });
 
-  it("calls setApprovalStatus on dropdown selection", () => {
-    render(<ApproversTable items={mockItems} />);
+  it("hides submenu on second click", () => {
+    render(<DiaasHeader headerItems={mockHeaderItems} />);
 
-    // Ensure 'Others' is initially selected
-    expect(screen.getByText("Status")).toBeInTheDocument();
+    // Show submenu
+    fireEvent.click(screen.getByText("Onboard"));
+    expect(screen.getByText("View/Modify")).toBeInTheDocument();
 
-    // Simulate dropdown selection
-    fireEvent.click(screen.getByText("Status")); // Open the dropdown
-    fireEvent.click(screen.getByText("Approved")); // Select "Approved"
-
-    // Verify filtering works
-    expect(screen.getByText("App1")).toBeInTheDocument();
-    expect(screen.queryByText("App2")).not.toBeInTheDocument();
-    expect(screen.queryByText("App3")).not.toBeInTheDocument();
+    // Click again to hide submenu
+    fireEvent.click(screen.getByText("Onboard"));
+    expect(screen.queryByText("View/Modify")).not.toBeInTheDocument();
   });
 
-  it("filters items based on selected approval status", () => {
-    render(<ApproversTable items={mockItems} />);
+  it("renders submenus correctly based on header selection", () => {
+    render(<DiaasHeader headerItems={mockHeaderItems} />);
 
-    fireEvent.click(screen.getByText("Status"));
-    fireEvent.click(screen.getByText("Rejected"));
-
-    expect(screen.getByText("App2")).toBeInTheDocument();
-    expect(screen.queryByText("App1")).not.toBeInTheDocument();
-    expect(screen.queryByText("App3")).not.toBeInTheDocument();
-  });
-
-  it("displays negative styling for rejected status", () => {
-    render(<ApproversTable items={mockItems} />);
-    expect(screen.getByText("Rejected").closest('td')).toHaveAttribute("negative");
-  });
-
-  it("displays the view button", () => {
-    render(<ApproversTable items={mockItems} />);
-    expect(screen.getAllByText("View")).toHaveLength(3);
+    // Click Pre-Processing
+    fireEvent.click(screen.getByText("Pre-Processing"));
+    expect(screen.getByText("View/Modify")).toBeInTheDocument();
+    expect(screen.getByText("Add")).toBeInTheDocument();
   });
 });
