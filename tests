@@ -1,47 +1,91 @@
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import Dropdown from "./Dropdown";
+// addapppoint.test.jsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import AddAppPoint from './addapppoint';
+import '@testing-library/jest-dom/extend-expect';
 
-const mockSubmenus = [
-  { title: "Item 1" },
-  { title: "Item 2" },
-  { title: "Item 3" }
-];
-
-jest.mock("./MenuItems", () => ({ items, depthLevel }) => (
-  <li data-testid="menu-item">{items.title}</li>
-));
-
-describe("Dropdown Component", () => {
-
-  it("renders without crashing", () => {
-    render(<Dropdown submenus={[]} dropdown={false} />);
-    expect(screen.getByRole("list")).toBeInTheDocument();
+describe('AddAppPoint Component', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve({ message: 'Form submitted successfully' }),
+      })
+    );
   });
 
-  it("renders all submenus correctly", () => {
-    render(<Dropdown submenus={mockSubmenus} dropdown={true} />);
-    const items = screen.getAllByTestId("menu-item");
-    expect(items).toHaveLength(mockSubmenus.length);
-    expect(items[0]).toHaveTextContent("Item 1");
-    expect(items[1]).toHaveTextContent("Item 2");
-    expect(items[2]).toHaveTextContent("Item 3");
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("applies the correct CSS class when dropdown is active", () => {
-    render(<Dropdown submenus={mockSubmenus} dropdown={true} />);
-    expect(screen.getByRole("list")).toHaveClass("show");
+  test('renders AddAppPoint component correctly', () => {
+    render(<AddAppPoint />);
+    
+    expect(screen.getByText('Onboard Application')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter Application Name')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter Tech Manager Email')).toBeInTheDocument();
   });
 
-  it("does not apply the show class when dropdown is inactive", () => {
-    render(<Dropdown submenus={mockSubmenus} dropdown={false} />);
-    expect(screen.getByRole("list")).not.toHaveClass("show");
+  test('handles input change correctly', () => {
+    render(<AddAppPoint />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter Application Name'), {
+      target: { value: 'Test Application', name: 'applicationName' },
+    });
+
+    expect(screen.getByPlaceholderText('Enter Application Name').value).toBe('Test Application');
   });
 
-  it("applies the correct depth level class", () => {
-    render(<Dropdown submenus={mockSubmenus} dropdown={true} depthLevel={2} />);
-    expect(screen.getByRole("list")).toHaveClass("dropdown-submenu");
+  test('submits form successfully', async () => {
+    render(<AddAppPoint />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter Application Name'), {
+      target: { value: 'Test Application', name: 'applicationName' },
+    });
+
+    fireEvent.click(screen.getByText('Submit'));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
+      'http://localhost:8888/api/v1/applications',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          applicationName: 'Test Application',
+          techManagerEmail: '',
+          altManagerEmail: '',
+          abo: '',
+          alternateAbo: '',
+          dcapEmail: ''
+        }),
+      })
+    ));
+
+    expect(screen.getByText('Onboard Application')).toBeInTheDocument();
   });
 
+  test('handles reset correctly', () => {
+    render(<AddAppPoint />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter Application Name'), {
+      target: { value: 'Test Application', name: 'applicationName' },
+    });
+
+    fireEvent.click(screen.getByText('Cancel'));
+
+    expect(screen.getByPlaceholderText('Enter Application Name').value).toBe('');
+  });
+
+  test('handles error on form submission', async () => {
+    global.fetch.mockImplementationOnce(() => Promise.reject('API is down'));
+
+    render(<AddAppPoint />);
+
+    fireEvent.change(screen.getByPlaceholderText('Enter Application Name'), {
+      target: { value: 'Test Application', name: 'applicationName' },
+    });
+
+    fireEvent.click(screen.getByText('Submit'));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
+  });
 });
