@@ -1,24 +1,18 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import '@testing-library/jest-dom';
-import DiassInput from "./DiassInput";
+import DiassTextBox from "./DiassTextBox";
 
-describe("DiassInput Component", () => {
-  it("renders input field with correct type", () => {
-    render(<DiassInput setInputValue={jest.fn()} type="password" />);
-    const inputElement = screen.getByRole("textbox");
-    expect(inputElement).toBeInTheDocument();
-    expect(inputElement).toHaveAttribute("type", "password");
+describe("DiassTextBox Component", () => {
+  it("renders with default text", () => {
+    render(<DiassTextBox />);
+    const textElement = screen.getByText("text");
+    expect(textElement).toBeInTheDocument();
   });
 
-  it("calls setInputValue on input change", () => {
-    const mockSetInputValue = jest.fn();
-    render(<DiassInput setInputValue={mockSetInputValue} />);
-    
-    const inputElement = screen.getByRole("textbox");
-    fireEvent.change(inputElement, { target: { value: "Test Input" } });
-
-    expect(mockSetInputValue).toHaveBeenCalledTimes(1);
-    expect(mockSetInputValue).toHaveBeenCalledWith("Test Input");
+  it("renders with provided text", () => {
+    render(<DiassTextBox text="Hello World" />);
+    const textElement = screen.getByText("Hello World");
+    expect(textElement).toBeInTheDocument();
   });
 });
