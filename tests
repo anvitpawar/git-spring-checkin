@@ -1,29 +1,47 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import VerticalDiaasTable from "./VerticalDiaasTable";
+import Dropdown from "./Dropdown";
 
-describe("VerticalDiaasTable Component", () => {
-  
-  it("renders the heading correctly", () => {
-    render(<VerticalDiaasTable heading="Test Heading" Child="Test Child Content" />);
-    expect(screen.getByText("Test Heading")).toBeInTheDocument();
+const mockSubmenus = [
+  { title: "Item 1" },
+  { title: "Item 2" },
+  { title: "Item 3" }
+];
+
+jest.mock("./MenuItems", () => ({ items, depthLevel }) => (
+  <li data-testid="menu-item">{items.title}</li>
+));
+
+describe("Dropdown Component", () => {
+
+  it("renders without crashing", () => {
+    render(<Dropdown submenus={[]} dropdown={false} />);
+    expect(screen.getByRole("list")).toBeInTheDocument();
   });
 
-  it("renders the child content correctly", () => {
-    render(<VerticalDiaasTable heading="Test Heading" Child="Test Child Content" />);
-    expect(screen.getByText("Test Child Content")).toBeInTheDocument();
+  it("renders all submenus correctly", () => {
+    render(<Dropdown submenus={mockSubmenus} dropdown={true} />);
+    const items = screen.getAllByTestId("menu-item");
+    expect(items).toHaveLength(mockSubmenus.length);
+    expect(items[0]).toHaveTextContent("Item 1");
+    expect(items[1]).toHaveTextContent("Item 2");
+    expect(items[2]).toHaveTextContent("Item 3");
   });
 
-  it("applies CSS classes correctly", () => {
-    render(<VerticalDiaasTable heading="Test Heading" Child="Test Child Content" />);
-    expect(screen.getByText("Test Heading")).toHaveClass("verticalContainerHeading");
-    expect(screen.getByText("Test Child Content")).toHaveClass("verticalContainerChild");
+  it("applies the correct CSS class when dropdown is active", () => {
+    render(<Dropdown submenus={mockSubmenus} dropdown={true} />);
+    expect(screen.getByRole("list")).toHaveClass("show");
   });
 
-  it("renders without crashing when no props are passed", () => {
-    render(<VerticalDiaasTable />);
-    expect(screen.getByText("undefined")).toBeInTheDocument(); // Since no props are passed
+  it("does not apply the show class when dropdown is inactive", () => {
+    render(<Dropdown submenus={mockSubmenus} dropdown={false} />);
+    expect(screen.getByRole("list")).not.toHaveClass("show");
+  });
+
+  it("applies the correct depth level class", () => {
+    render(<Dropdown submenus={mockSubmenus} dropdown={true} depthLevel={2} />);
+    expect(screen.getByRole("list")).toHaveClass("dropdown-submenu");
   });
 
 });
