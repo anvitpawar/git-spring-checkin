@@ -1,32 +1,52 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import InputField from './InputField';
-import { Input } from 'semantic-ui-react';
+import ApproversTable from './ApproversTable';
 
-describe("InputField Component", () => {
-  it("renders the label correctly", () => {
-    render(<InputField name="Test Label" />);
-    expect(screen.getByText("Test Label")).toBeInTheDocument();
+describe("ApproversTable Component", () => {
+  const mockItems = [
+    { applicationName: "App1", domainName: "Domain1", columnName: "Column1", status: "Approved" },
+    { applicationName: "App2", domainName: "Domain2", columnName: "Column2", status: "Rejected" },
+    { applicationName: "App3", domainName: "Domain3", columnName: "Column3", status: "Others" },
+  ];
+
+  it("renders the table headers correctly", () => {
+    render(<ApproversTable items={mockItems} />);
+
+    expect(screen.getByText("Application Name")).toBeInTheDocument();
+    expect(screen.getByText("Data Domain")).toBeInTheDocument();
+    expect(screen.getByText("Column Name")).toBeInTheDocument();
+    expect(screen.getByText("Status")).toBeInTheDocument();
+    expect(screen.getByText("View")).toBeInTheDocument();
   });
 
-  it("renders the field as input when isInput is true", () => {
-    render(<InputField name="Input Test" field={{ placeholder: "Enter text" }} isInput={true} />);
-    expect(screen.getByPlaceholderText("Enter text")).toBeInTheDocument();
+  it("renders all items when approval status is 'Others'", () => {
+    render(<ApproversTable items={mockItems} />);
+
+    expect(screen.getByText("App1")).toBeInTheDocument();
+    expect(screen.getByText("App2")).toBeInTheDocument();
+    expect(screen.getByText("App3")).toBeInTheDocument();
   });
 
-  it("renders the field as plain text when isInput is false", () => {
-    render(<InputField name="Plain Text" field="Sample Text" isInput={false} />);
-    expect(screen.getByText("Sample Text")).toBeInTheDocument();
+  it("filters items based on selected approval status", () => {
+    render(<ApproversTable items={mockItems} />);
+
+    // Simulate dropdown selection
+    fireEvent.click(screen.getByText("Status"));
+    fireEvent.click(screen.getByText("Approved"));
+
+    expect(screen.getByText("App1")).toBeInTheDocument();
+    expect(screen.queryByText("App2")).not.toBeInTheDocument();
+    expect(screen.queryByText("App3")).not.toBeInTheDocument();
   });
 
-  it("applies the field class when isInput is false", () => {
-    render(<InputField name="Class Test" field="Sample Text" isInput={false} />);
-    expect(screen.getByText("Sample Text").closest('div')).toHaveClass("field");
+  it("displays negative styling for rejected status", () => {
+    render(<ApproversTable items={mockItems} />);
+    expect(screen.getByText("Rejected").closest('td')).toHaveAttribute("negative");
   });
 
-  it("does not apply the field class when isInput is true", () => {
-    render(<InputField name="Class Test" field={{ placeholder: "Enter text" }} isInput={true} />);
-    expect(screen.getByPlaceholderText("Enter text").closest('div')).not.toHaveClass("field");
+  it("displays the view button", () => {
+    render(<ApproversTable items={mockItems} />);
+    expect(screen.getAllByText("View")).toHaveLength(3);
   });
 });
