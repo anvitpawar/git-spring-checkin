@@ -1,18 +1,35 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import '@testing-library/jest-dom';
-import DiassTextBox from "./DiassTextBox";
+import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import DiaasDropdown from "./DiaasDropdown";
 
-describe("DiassTextBox Component", () => {
-  it("renders with default text", () => {
-    render(<DiassTextBox />);
-    const textElement = screen.getByText("text");
-    expect(textElement).toBeInTheDocument();
+describe("DiaasDropdown Component", () => {
+  const mockSetValue = jest.fn();
+  const mockItems = ["Option 1", "Option 2", "Option 3"];
+
+  it("renders the title correctly", () => {
+    render(<DiaasDropdown title="Select Item" items={mockItems} setValue={mockSetValue} />);
+    expect(screen.getByText("Select Item")).toBeInTheDocument();
   });
 
-  it("renders with provided text", () => {
-    render(<DiassTextBox text="Hello World" />);
-    const textElement = screen.getByText("Hello World");
-    expect(textElement).toBeInTheDocument();
+  it("renders the dropdown options correctly", () => {
+    render(<DiaasDropdown title="Select Item" items={mockItems} setValue={mockSetValue} />);
+    fireEvent.click(screen.getByText("Select Select Item"));
+    
+    mockItems.forEach(item => {
+      expect(screen.getByText(item)).toBeInTheDocument();
+    });
+  });
+
+  it("calls setValue on selection", () => {
+    render(<DiaasDropdown title="Select Item" items={mockItems} setValue={mockSetValue} />);
+    fireEvent.click(screen.getByText("Select Select Item"));
+    fireEvent.click(screen.getByText("Option 1"));
+    expect(mockSetValue).toHaveBeenCalledWith("Option 1");
+  });
+
+  it("renders placeholder when title is empty", () => {
+    render(<DiaasDropdown title="" items={mockItems} setValue={mockSetValue} />);
+    expect(screen.getByPlaceholderText("Select an option")).toBeInTheDocument();
   });
 });
