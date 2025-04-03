@@ -1,35 +1,29 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import DiaasDropdown from "./DiaasDropdown";
+import VerticalDiaasTable from "./VerticalDiaasTable";
 
-describe("DiaasDropdown Component", () => {
-  const mockSetValue = jest.fn();
-  const mockItems = ["Option 1", "Option 2", "Option 3"];
-
-  it("renders the title correctly", () => {
-    render(<DiaasDropdown title="Select Item" items={mockItems} setValue={mockSetValue} />);
-    expect(screen.getByText("Select Item")).toBeInTheDocument();
+describe("VerticalDiaasTable Component", () => {
+  
+  it("renders the heading correctly", () => {
+    render(<VerticalDiaasTable heading="Test Heading" Child="Test Child Content" />);
+    expect(screen.getByText("Test Heading")).toBeInTheDocument();
   });
 
-  it("renders the dropdown options correctly", () => {
-    render(<DiaasDropdown title="Select Item" items={mockItems} setValue={mockSetValue} />);
-    fireEvent.click(screen.getByText("Select Select Item"));
-    
-    mockItems.forEach(item => {
-      expect(screen.getByText(item)).toBeInTheDocument();
-    });
+  it("renders the child content correctly", () => {
+    render(<VerticalDiaasTable heading="Test Heading" Child="Test Child Content" />);
+    expect(screen.getByText("Test Child Content")).toBeInTheDocument();
   });
 
-  it("calls setValue on selection", () => {
-    render(<DiaasDropdown title="Select Item" items={mockItems} setValue={mockSetValue} />);
-    fireEvent.click(screen.getByText("Select Select Item"));
-    fireEvent.click(screen.getByText("Option 1"));
-    expect(mockSetValue).toHaveBeenCalledWith("Option 1");
+  it("applies CSS classes correctly", () => {
+    render(<VerticalDiaasTable heading="Test Heading" Child="Test Child Content" />);
+    expect(screen.getByText("Test Heading")).toHaveClass("verticalContainerHeading");
+    expect(screen.getByText("Test Child Content")).toHaveClass("verticalContainerChild");
   });
 
-  it("renders placeholder when title is empty", () => {
-    render(<DiaasDropdown title="" items={mockItems} setValue={mockSetValue} />);
-    expect(screen.getByPlaceholderText("Select an option")).toBeInTheDocument();
+  it("renders without crashing when no props are passed", () => {
+    render(<VerticalDiaasTable />);
+    expect(screen.getByText("undefined")).toBeInTheDocument(); // Since no props are passed
   });
+
 });
