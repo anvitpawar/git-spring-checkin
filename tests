@@ -1,66 +1,24 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import '@testing-library/jest-dom';
-import DiaasHeader from './DiaasHeader';
+import DiassInput from "./DiassInput";
 
-describe("DiaasHeader Component", () => {
-  const mockHeaderItems = [
-    {
-      title: "Onboard",
-      subHeadings: [{ title: "Application", subMenu: ["View/Modify", "Add"] }],
-    },
-    {
-      title: "Pre-Processing",
-      subHeadings: [{ title: "Application", subMenu: ["View/Modify", "Add"] }],
-    },
-    {
-      title: "Questionnaire",
-      subHeadings: [{ title: "Application", subMenu: ["View/Modify", "Add"] }],
-    }
-  ];
-
-  it("renders the header titles correctly", () => {
-    render(<DiaasHeader headerItems={mockHeaderItems} />);
-
-    // Check main menu items
-    expect(screen.getByText("Onboard")).toBeInTheDocument();
-    expect(screen.getByText("Pre-Processing")).toBeInTheDocument();
-    expect(screen.getByText("Questionnaire")).toBeInTheDocument();
+describe("DiassInput Component", () => {
+  it("renders input field with correct type", () => {
+    render(<DiassInput setInputValue={jest.fn()} type="password" />);
+    const inputElement = screen.getByRole("textbox");
+    expect(inputElement).toBeInTheDocument();
+    expect(inputElement).toHaveAttribute("type", "password");
   });
 
-  it("toggles submenu visibility on click", () => {
-    render(<DiaasHeader headerItems={mockHeaderItems} />);
+  it("calls setInputValue on input change", () => {
+    const mockSetInputValue = jest.fn();
+    render(<DiassInput setInputValue={mockSetInputValue} />);
+    
+    const inputElement = screen.getByRole("textbox");
+    fireEvent.change(inputElement, { target: { value: "Test Input" } });
 
-    // Submenu should be hidden initially
-    expect(screen.queryByText("View/Modify")).not.toBeInTheDocument();
-    expect(screen.queryByText("Add")).not.toBeInTheDocument();
-
-    // Click to show submenu
-    fireEvent.click(screen.getByText("Onboard"));
-
-    // Check if submenu appears
-    expect(screen.getByText("View/Modify")).toBeInTheDocument();
-    expect(screen.getByText("Add")).toBeInTheDocument();
-  });
-
-  it("hides submenu on second click", () => {
-    render(<DiaasHeader headerItems={mockHeaderItems} />);
-
-    // Show submenu
-    fireEvent.click(screen.getByText("Onboard"));
-    expect(screen.getByText("View/Modify")).toBeInTheDocument();
-
-    // Click again to hide submenu
-    fireEvent.click(screen.getByText("Onboard"));
-    expect(screen.queryByText("View/Modify")).not.toBeInTheDocument();
-  });
-
-  it("renders submenus correctly based on header selection", () => {
-    render(<DiaasHeader headerItems={mockHeaderItems} />);
-
-    // Click Pre-Processing
-    fireEvent.click(screen.getByText("Pre-Processing"));
-    expect(screen.getByText("View/Modify")).toBeInTheDocument();
-    expect(screen.getByText("Add")).toBeInTheDocument();
+    expect(mockSetInputValue).toHaveBeenCalledTimes(1);
+    expect(mockSetInputValue).toHaveBeenCalledWith("Test Input");
   });
 });
