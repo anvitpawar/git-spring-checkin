@@ -1,4 +1,36 @@
-const React = require('react');
-const { render, screen, fireEvent, waitFor } = require('@testing-library/react');
-const AddAppPoint = require('./addapppoint');
-require('@testing-library/jest-dom/extend-expect');
+import React from 'react';
+import { render } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import CreateDMPCheckIn from './CreateDMPCheckIn';
+
+// Mocking child components
+jest.mock('./IngressNormalNavigation', () => () => <div>Mocked Navigation</div>);
+jest.mock('../../github/GithubOAuth', () => ({ requirementId }) => (
+  <div>Mocked GitHubAuth with ID: {requirementId?.id || 'None'}</div>
+));
+
+describe('CreateDMPCheckIn Component', () => {
+  it('renders correctly with location state', () => {
+    const locationState = { id: 'REQ123' };
+
+    const { getByText } = render(
+      <MemoryRouter initialEntries={[{ pathname: '/', state: locationState }]}>
+        <CreateDMPCheckIn />
+      </MemoryRouter>
+    );
+
+    expect(getByText('Mocked Navigation')).toBeInTheDocument();
+    expect(getByText(/Mocked GitHubAuth with ID: REQ123/)).toBeInTheDocument();
+  });
+
+  it('renders correctly without location state', () => {
+    const { getByText } = render(
+      <MemoryRouter>
+        <CreateDMPCheckIn />
+      </MemoryRouter>
+    );
+
+    expect(getByText('Mocked Navigation')).toBeInTheDocument();
+    expect(getByText(/Mocked GitHubAuth with ID: None/)).toBeInTheDocument();
+  });
+});
