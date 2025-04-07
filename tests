@@ -2,29 +2,31 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import axios from 'axios';
-import CreateCDMPDataplexConfig from './CreateCDMPDataplexConfig';
 
-// Mock dependencies
+// Import the component from parent directory
+import CreateCDMPDataplexConfig from '../components/CreateCDMPDataplexConfig';
+
+// Mock all external dependencies
 jest.mock('@wf/react-library', () => ({
   useAppGlobalState: () => ({ token: 'mock-token' }),
 }));
 
-jest.mock('../../util/Constant', () => ({
+jest.mock('../util/Constant', () => ({
   MICROSERVICE_URL: 'http://mock-microservice',
 }));
 
-jest.mock('../../Authentication', () => ({
+jest.mock('../Authentication', () => ({
   generateSearHeader: jest.fn(() => ({ Authorization: 'Bearer mock-token' })),
 }));
 
-jest.mock('./IngressDataplexNavigation', () => () => (
+jest.mock('../components/IngressDataplexNavigation', () => () => (
   <div>Mocked IngressDataplexNavigation</div>
 ));
 
 jest.mock('axios');
 
 describe('CreateCDMPDataplexConfig Component', () => {
-  it('fetches metadata and renders component correctly', async () => {
+  it('fetches metadata and renders JSON correctly', async () => {
     const mockData = { name: 'Test Metadata', values: [1, 2, 3] };
     axios.get.mockResolvedValueOnce({ data: mockData });
 
@@ -36,9 +38,9 @@ describe('CreateCDMPDataplexConfig Component', () => {
 
     expect(screen.getByText('Mocked IngressDataplexNavigation')).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(screen.getByText(/Test Metadata/)).toBeInTheDocument()
-    );
+    await waitFor(() => {
+      expect(screen.getByText((content) => content.includes('Test Metadata'))).toBeInTheDocument();
+    });
   });
 
   it('handles fetch error gracefully', async () => {
