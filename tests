@@ -1,36 +1,59 @@
 import React from 'react';
-import { render } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
-import CreateDMPCheckIn from './CreateDMPCheckIn';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import axios from 'axios';
+import CreateCDMPDataplexConfig from './CreateCDMPDataplexConfig';
 
-// Mocking child components
-jest.mock('./IngressNormalNavigation', () => () => <div>Mocked Navigation</div>);
-jest.mock('../../github/GithubOAuth', () => ({ requirementId }) => (
-  <div>Mocked GitHubAuth with ID: {requirementId?.id || 'None'}</div>
+// Mock dependencies
+jest.mock('@wf/react-library', () => ({
+  useAppGlobalState: () => ({ token: 'mock-token' }),
+}));
+
+jest.mock('../../util/Constant', () => ({
+  MICROSERVICE_URL: 'http://mock-microservice',
+}));
+
+jest.mock('../../Authentication', () => ({
+  generateSearHeader: jest.fn(() => ({ Authorization: 'Bearer mock-token' })),
+}));
+
+jest.mock('./IngressDataplexNavigation', () => () => (
+  <div>Mocked IngressDataplexNavigation</div>
 ));
 
-describe('CreateDMPCheckIn Component', () => {
-  it('renders correctly with location state', () => {
-    const locationState = { id: 'REQ123' };
+jest.mock('axios');
 
-    const { getByText } = render(
-      <MemoryRouter initialEntries={[{ pathname: '/', state: locationState }]}>
-        <CreateDMPCheckIn />
+describe('CreateCDMPDataplexConfig Component', () => {
+  it('fetches metadata and renders component correctly', async () => {
+    const mockData = { name: 'Test Metadata', values: [1, 2, 3] };
+    axios.get.mockResolvedValueOnce({ data: mockData });
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/', state: 'REQ456' }]}>
+        <CreateCDMPDataplexConfig />
       </MemoryRouter>
     );
 
-    expect(getByText('Mocked Navigation')).toBeInTheDocument();
-    expect(getByText(/Mocked GitHubAuth with ID: REQ123/)).toBeInTheDocument();
+    expect(screen.getByText('Mocked IngressDataplexNavigation')).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(screen.getByText(/Test Metadata/)).toBeInTheDocument()
+    );
   });
 
-  it('renders correctly without location state', () => {
-    const { getByText } = render(
-      <MemoryRouter>
-        <CreateDMPCheckIn />
+  it('handles fetch error gracefully', async () => {
+    axios.get.mockRejectedValueOnce(new Error('Fetch failed'));
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/', state: 'REQ789' }]}>
+        <CreateCDMPDataplexConfig />
       </MemoryRouter>
     );
 
-    expect(getByText('Mocked Navigation')).toBeInTheDocument();
-    expect(getByText(/Mocked GitHubAuth with ID: None/)).toBeInTheDocument();
+    expect(screen.getByText('Mocked IngressDataplexNavigation')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(axios.get).toHaveBeenCalled();
+    });
   });
 });
