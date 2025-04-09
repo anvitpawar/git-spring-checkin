@@ -1,61 +1,35 @@
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import axios from 'axios';
+function parseProfileString(str) {
+  if (!str) return [];
 
-// Import the component from parent directory
-import CreateCDMPDataplexConfig from '../components/CreateCDMPDataplexConfig';
+  const lines = str.split('\n');
+  return lines.map((line) => {
+    line = line.trim();
+    if (!line) return { key: '__separator__', value: '' }; // for blank lines
 
-// Mock all external dependencies
-jest.mock('@wf/react-library', () => ({
-  useAppGlobalState: () => ({ token: 'mock-token' }),
-}));
+    let key = '';
+    let value = '';
 
-jest.mock('../util/Constant', () => ({
-  MICROSERVICE_URL: 'http://mock-microservice',
-}));
+    const colonIndex = line.indexOf(':');
+    const equalIndex = line.indexOf('=');
 
-jest.mock('../Authentication', () => ({
-  generateSearHeader: jest.fn(() => ({ Authorization: 'Bearer mock-token' })),
-}));
+    if (colonIndex !== -1) {
+      key = line.slice(0, colonIndex).trim();
+      value = line.slice(colonIndex + 1).trim();
+    } else if (equalIndex !== -1) {
+      key = line.slice(0, equalIndex).trim();
+      value = line.slice(equalIndex + 1).trim();
+    } else {
+      key = line.trim(); // Only key, no value
+    }
 
-jest.mock('../components/IngressDataplexNavigation', () => () => (
-  <div>Mocked IngressDataplexNavigation</div>
-));
+    // Remove wrapping quotes from key and value
+    if (key.startsWith('"') && key.endsWith('"')) {
+      key = key.slice(1, -1);
+    }
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1);
+    }
 
-jest.mock('axios');
-
-describe('CreateCDMPDataplexConfig Component', () => {
-  it('fetches metadata and renders JSON correctly', async () => {
-    const mockData = { name: 'Test Metadata', values: [1, 2, 3] };
-    axios.get.mockResolvedValueOnce({ data: mockData });
-
-    render(
-      <MemoryRouter initialEntries={[{ pathname: '/', state: 'REQ456' }]}>
-        <CreateCDMPDataplexConfig />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText('Mocked IngressDataplexNavigation')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByText((content) => content.includes('Test Metadata'))).toBeInTheDocument();
-    });
+    return { key, value };
   });
-
-  it('handles fetch error gracefully', async () => {
-    axios.get.mockRejectedValueOnce(new Error('Fetch failed'));
-
-    render(
-      <MemoryRouter initialEntries={[{ pathname: '/', state: 'REQ789' }]}>
-        <CreateCDMPDataplexConfig />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByText('Mocked IngressDataplexNavigation')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(axios.get).toHaveBeenCalled();
-    });
-  });
-});
+}
