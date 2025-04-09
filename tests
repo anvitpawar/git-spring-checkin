@@ -1,15 +1,15 @@
 function parseProfileString(str) {
-  return lines.map((line) => {
+  return str.split('\n').map((line) => {
     line = line.trim();
     let key = '', value = '', delimiter = '';
-
-    // Check for shell/control keywords and mark as plain text immediately
-    const shellKeywordPattern = /^(export|if|fi|elif|else|then|do|done|while|for|echo)\b/;
-    const exitPattern = /^.*exit\s+\d+/;
-
     let isPlainText = false;
 
-    if (shellKeywordPattern.test(line) || exitPattern.test(line)) {
+    // Shell keywords or compound statements to treat as plain text
+    const shellPattern = /\b(if|fi|elif|else|then|do|done|while|for|echo|export|exit)\b/;
+    const compoundBashPattern = /(;|\[.*\]\s*;)/; // detect compound statements like: if [ .. ]; then
+
+    // Mark as plain text if it's a bash statement
+    if (shellPattern.test(line) || compoundBashPattern.test(line)) {
       isPlainText = true;
       return { key: line, value: '', delimiter: 'none', isPlainText };
     }
@@ -33,16 +33,6 @@ function parseProfileString(str) {
     // Strip trailing "\" if present
     if (key.startsWith('')) key = key.slice(1, -1);
     if (value.endsWith(',\\')) value = value.slice(0, -2).trim();
-
-    // Extra conditions for math/test/command substitution handling
-    if (
-      delimiter === 'none' ||
-      /[`$()]/.test(value) ||
-      /^\s*\$*begin:math:display.*\$*end:math:display/.test(line) ||
-      /^\s*exit\s+\d+/.test(line.trim())
-    ) {
-      isPlainText = true;
-    }
 
     return { key, value, delimiter, isPlainText };
   });
