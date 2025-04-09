@@ -1,12 +1,47 @@
-let isPlainText = false;
+function parseProfileString(str) {
+  return lines.map((line) => {
+    let value = '';
+    let delimiter = 'none';
+    const equalIndex = line.indexOf('=');
+    const colonIndex = line.indexOf(':');
 
-if (
-  delimiter === 'none' ||
-  /^(export|if|fi|elif|else|then|do|done|while|for|echo)\b/.test(key) ||
-  /[`$()]/.test(value) ||                // command substitutions
-  /^$begin:math:display$.*$end:math:display$$/.test(line.trim()) ||       // shell test expressions
-  /^\s*$begin:math:display$.*$end:math:display$\s*;?\s*(then)?$/.test(line.trim()) || // test condition with 'then'
-  /^\s*exit\s+\d+/.test(line.trim())    // exit statements
-) {
-  isPlainText = true;
+    // Detect shell script syntax (like if/elif/else/do/fi or use of $() or `command`)
+    const isShellLine = /^(if|fi|elif|else|then|do|done|while|for|echo|exit|\[|\])/i.test(line.trim()) || /[`$()]/.test(line);
+
+    // Handle shell or non-key-value lines as plain text
+    if (isShellLine) {
+      return {
+        key: line.trim(),
+        value: '',
+        delimiter: 'none',
+        isPlainText: true
+      };
+    }
+
+    let key = '';
+
+    if (colonIndex !== -1) {
+      key = line.slice(0, colonIndex).trim();
+      value = line.slice(colonIndex + 1).trim();
+      delimiter = 'colon';
+    } else if (equalIndex !== -1) {
+      key = line.slice(0, equalIndex).trim();
+      value = line.slice(equalIndex + 1).trim();
+      delimiter = 'equal';
+    } else {
+      key = line.trim();
+    }
+
+    // Strip surrounding quotes from key
+    if (key.startsWith('"') && key.endsWith('"')) {
+      key = key.slice(1, -1);
+    }
+
+    // Strip trailing '\' from value if present
+    if (value.endsWith('\\')) {
+      value = value.slice(0, -1).trim();
+    }
+
+    return { key, value, delimiter };
+  });
 }
