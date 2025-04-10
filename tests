@@ -132,3 +132,105 @@ This will ensure:
 ⸻
 
 Next up: the core UI logic inside KeyValuePair.jsx — with add/remove buttons specific to environment blocks. Ready?
+
+
+Perfect — here’s Step 3: the updated KeyValuePair.jsx component.
+
+This version:
+	•	Detects and groups by envGroup
+	•	Shows one “Add Pair” button per environment group
+	•	Syncs added keys across all group members
+	•	Disables “Add Pair” for non-APP or non-env keys
+	•	Handles editable-only or read-only fields correctly
+
+⸻
+
+✅ KeyValuePair.jsx
+
+import React from 'react';
+
+const KeyValuePair = ({
+  pairs,
+  onChange,
+  onAddPair,
+  onRemovePair,
+}) => {
+  const handleKeyChange = (index, newKey) => {
+    const updated = [...pairs];
+    updated[index].key = newKey;
+    onChange(updated, updated[index].envGroup);
+  };
+
+  const handleValueChange = (index, newValue) => {
+    const updated = [...pairs];
+    updated[index].value = newValue;
+    onChange(updated, updated[index].envGroup);
+  };
+
+  const isAddable = (item) =>
+    (item.key?.startsWith('APP_') || item.envGroup) && !item.isPlainText;
+
+  const grouped = {};
+  pairs.forEach((item, index) => {
+    const groupKey = item.envGroup || `single-${index}`;
+    if (!grouped[groupKey]) grouped[groupKey] = [];
+    grouped[groupKey].push({ ...item, index });
+  });
+
+  return (
+    <div>
+      {Object.entries(grouped).map(([groupKey, groupItems]) => (
+        <div key={groupKey} style={{ marginBottom: '1rem' }}>
+          {groupItems.map((item, i) =>
+            item.isPlainText ? (
+              <pre key={i} style={{ background: '#f5f5f5' }}>{item.text}</pre>
+            ) : (
+              <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '5px' }}>
+                <input
+                  type="text"
+                  value={item.key}
+                  onChange={(e) => handleKeyChange(item.index, e.target.value)}
+                  placeholder="Key"
+                  disabled={item.isPlainText}
+                  style={{ flex: 1 }}
+                />
+                <span>{item.delimiter === 'colon' ? ':' : '='}</span>
+                <input
+                  type="text"
+                  value={item.value}
+                  onChange={(e) => handleValueChange(item.index, e.target.value)}
+                  placeholder="Value"
+                  disabled={item.isPlainText}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  onClick={() => onRemovePair(item.index, item.envGroup)}
+                  style={{ background: 'red', color: 'white' }}
+                >
+                  Remove
+                </button>
+              </div>
+            )
+          )}
+          {/* Add Pair button only once per group and only if allowed */}
+          {isAddable(groupItems[0]) && (
+            <button
+              onClick={() => onAddPair(groupItems[0].envGroup)}
+              style={{ background: 'green', color: 'white', marginTop: '5px' }}
+            >
+              Add Pair
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default KeyValuePair;
+
+
+
+⸻
+
+Next, I’ll share how your ProfileEditor.jsx should handle the onAddPair and onRemovePair logic to update all items in a group. Want that part now?
