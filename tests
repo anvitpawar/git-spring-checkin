@@ -1,180 +1,102 @@
-Got it — here are the two functions rewritten in function declaration style instead of arrow functions, exactly as you asked:
-
-⸻
-
-1. parseProfileString
-
-function parseProfileString(str) {
-  const lines = str.split('\n');
-  const parsed = [];
-  let currentEnv = null;
-  let envGroups = {
-    dev: [],
-    sit: [],
-    uat: [],
-    else: [],
+export default function KeyValuePair({ index, pair, onChange, onRemove, onAddAfter }) {
+  const handleKeyChange = (e) => {
+    onChange(index, { ...pair, key: e.target.value });
   };
 
-  lines.forEach((line) => {
-    const trimmed = line.trim();
+  const handleValueChange = (e) => {
+    onChange(index, { ...pair, value: e.target.value });
+  };
 
-    if (/^if\s*\[\$env=dev/.test(trimmed)) currentEnv = 'dev';
-    else if (/^elif\s*\[\$env=sit/.test(trimmed)) currentEnv = 'sit';
-    else if (/^elif\s*\[\$env=uat/.test(trimmed)) currentEnv = 'uat';
-    else if (/^else/.test(trimmed)) currentEnv = 'else';
-    else if (/^fi/.test(trimmed)) currentEnv = null;
+  // Blank line separator
+  if (!pair.key && !pair.value) {
+    return (
+      <div className="pair-separator" key={`separator-${index}`}>
+        <hr style={{ margin: '10px 0', borderTop: '1px solid black' }} />
+      </div>
+    );
+  }
 
-    if (/^\s*(if|elif|else|fi)/.test(trimmed)) {
-      parsed.push({ type: 'plaintext', content: line });
-    } else if (/^\s*export\s+[^=]+=.*/.test(trimmed)) {
-      const match = line.match(/^\s*export\s+([^=]+)=(.*)/);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        const editable = true;
-        const canAdd =
-          key.startsWith('APP_') ||
-          ['dev', 'sit', 'uat', 'else'].includes(currentEnv);
-
-        const entry = {
-          key,
-          value,
-          delimiter: 'equal',
-          editable,
-          canAdd,
-          envGroup: currentEnv,
-        };
-
-        if (currentEnv) envGroups[currentEnv].push(entry);
-        parsed.push(entry);
-      }
-    } else {
-      parsed.push({ type: 'plaintext', content: line });
-    }
-  });
-
-  // Sync keys across environment blocks
-  const allKeys = new Set();
-  Object.values(envGroups).forEach((arr) =>
-    arr.forEach((item) => allKeys.add(item.key))
-  );
-
-  Object.entries(envGroups).forEach(([env, items]) => {
-    const keysInEnv = items.map((i) => i.key);
-    const missingKeys = [...allKeys].filter((key) => !keysInEnv.includes(key));
-    missingKeys.forEach((missingKey) => {
-      parsed.push({
-        key: missingKey,
-        value: '',
-        delimiter: 'equal',
-        editable: true,
-        canAdd: true,
-        envGroup: env,
-      });
-    });
-  });
-
-  return parsed;
-}
-
-
-
-⸻
-
-2. profileArrayToString
-
-function profileArrayToString(pairs) {
-  return pairs
-    .map((item) => {
-      if (item.type === 'plaintext') return item.content;
-      if (!item.key) return '';
-      const delimiter = item.delimiter === 'colon' ? ':' : '=';
-      return `export ${item.key}${delimiter}${item.value || ''}`;
-    })
-    .join('\n');
-}
-
-
-
-⸻
-
-Let me know if you’d like help integrating these into your ProfileEditor.jsx or if you want to see the onAddPair function code too.
-
-Absolutely — here’s how you can minimally enhance your existing KeyValuePair.jsx so everything renders correctly and the Add/Remove buttons show up only where they should, without breaking your working logic.
-
-⸻
-
-Modified KeyValuePair.jsx (only slight changes):
-
-import React from 'react';
-import PropTypes from 'prop-types';
-
-function KeyValuePair({
-  pair,
-  onChange,
-  onRemove,
-  onAdd,
-  index,
-  totalPairs,
-}) {
-  const isKeyValue = pair.hasOwnProperty('key') && pair.hasOwnProperty('value');
-
-  return (
-    <div style={{ display: 'flex', marginBottom: '8px' }}>
-      {isKeyValue ? (
-        <>
+  // Special KEystore case
+  if (pair.key === 'KEYSTORE') {
+    return (
+      <>
+        <div className="pair-row">
           <input
             type="text"
-            value={pair.key}
-            onChange={(e) => onChange(index, 'key', e.target.value)}
-            disabled={!pair.editable}
-            style={{ marginRight: '8px', flex: 1 }}
+            placeholder="Key"
+            value={pair.key.replace(/^ *(export|echo) +/, '')}
+            onChange={handleKeyChange}
+            className="pair-input"
           />
+          <span className="colon-separator">=</span>
           <input
             type="text"
+            placeholder="Value"
             value={pair.value}
-            onChange={(e) => onChange(index, 'value', e.target.value)}
-            disabled={!pair.editable}
-            style={{ marginRight: '8px', flex: 1 }}
+            onChange={handleValueChange}
+            className="pair-input"
           />
-          {pair.editable && (
-            <button onClick={() => onRemove(index)} style={{ marginRight: '8px', background: 'red', color: 'white' }}>
-              Remove
-            </button>
-          )}
-          {/* Only show Add button once per environment group or APP_ export group */}
-          {pair.canAdd && index === totalPairs - 1 && (
-            <button onClick={() => onAdd(pair)} style={{ background: 'green', color: 'white' }}>
-              Add Pair
-            </button>
-          )}
-        </>
-      ) : (
-        <div style={{ flex: 1 }}>{pair.content}</div>
-      )}
+          <button
+            style={{ width: '100px' }}
+            onClick={() => onRemove(index)}
+            className="remove-button"
+          >
+            Remove
+          </button>
+        </div>
+        <div className="pair-separator" key={`separator-${index}`}>
+          <button
+            style={{ margin: '10px 0', width: '100px' }}
+            onClick={() => onAddAfter(index)}
+          >
+            Add Pair Below
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  // Missing value
+  if (!pair.value) {
+    return (
+      <div className="pair-separator" key={`separator-${index}`}></div>
+    );
+  }
+
+  // Plain text line
+  if (pair.isPlainText) {
+    return (
+      <div className="pair-plain-text" key={`plain-${index}`}>
+        {pair.key}
+      </div>
+    );
+  }
+
+  // *** NORMAL FIELD rendering (this was missing) ***
+  return (
+    <div className="pair-row">
+      <input
+        type="text"
+        placeholder="Key"
+        value={pair.key.replace(/^ *(export|echo) +/, '')}
+        onChange={handleKeyChange}
+        className="pair-input"
+      />
+      <span className="colon-separator">=</span>
+      <input
+        type="text"
+        placeholder="Value"
+        value={pair.value}
+        onChange={handleValueChange}
+        className="pair-input"
+      />
+      <button
+        style={{ width: '100px' }}
+        onClick={() => onRemove(index)}
+        className="remove-button"
+      >
+        Remove
+      </button>
     </div>
   );
 }
-
-KeyValuePair.propTypes = {
-  pair: PropTypes.object.isRequired,
-  onChange: PropTypes.func.isRequired,
-  onRemove: PropTypes.func.isRequired,
-  onAdd: PropTypes.func,
-  index: PropTypes.number.isRequired,
-  totalPairs: PropTypes.number.isRequired,
-};
-
-export default KeyValuePair;
-
-
-
-⸻
-
-Key Changes Summary:
-	•	No logic removed — only additions to handle canAdd and editable.
-	•	Ensures Add Pair shows only once per group (by checking index === totalPairs - 1).
-	•	Ensures Remove only for editable fields.
-	•	Plain text blocks render unchanged.
-
-Would you like the usage code inside ProfileEditor.jsx to match this now?
