@@ -82,7 +82,9 @@ function profileArrayToString(pairs) {
 
 ✅ KeyValuePair.jsx
 
+
 import React from 'react';
+import PropTypes from 'prop-types';
 
 export default function KeyValuePair({ index, pair, onChange, onRemove, onAdd }) {
   const handleKeyChange = (e) => {
@@ -93,49 +95,71 @@ export default function KeyValuePair({ index, pair, onChange, onRemove, onAdd })
     onChange(index, { ...pair, value: e.target.value });
   };
 
-  if (!pair.key && !pair.value) {
+  if (!pair.value) {
     return (
       <div className="pair-separator" key={`separator-${index}`}>
-        <button onClick={() => onRemove(index)}>Remove</button>
         {pair.allowAdd && (
           <button onClick={() => onAdd(index)}>Add Pair</button>
         )}
+        <button onClick={() => onRemove(index)}>Remove</button>
         <hr style={{ margin: '10px 0', borderTop: '1px solid black' }} />
       </div>
     );
   }
 
-  if (pair.isPlainText) {
-    return <pre style={{ background: '#f4f4f4', padding: '5px' }}>{pair.key}</pre>;
-  }
-
   return (
-    <div className="pair-row" style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-      <input
-        type="text"
-        placeholder="Key"
-        value={pair.key}
-        onChange={handleKeyChange}
-        className="pair-input"
-        style={{ flex: 2 }}
-      />
-      <span className="colon-separator">=</span>
-      <input
-        type="text"
-        placeholder="Value"
-        value={pair.value}
-        onChange={handleValueChange}
-        className="pair-input"
-        style={{ flex: 2 }}
-      />
-      <button onClick={() => onRemove(index)}>Remove</button>
-      {pair.allowAdd && (
-        <button onClick={() => onAdd(index)}>Add Pair</button>
+    <div className="pair-row">
+      {pair.isPlainText ? (
+        <div className="pair-plain-text">
+          {pair.key}
+        </div>
+      ) : (
+        <>
+          <input
+            type="text"
+            placeholder="Key"
+            value={pair.key.replace(/^(export|echo)\s+/, '')}
+            onChange={handleKeyChange}
+            className="pair-input"
+          />
+          <span className="colon-separator">=</span>
+          <input
+            type="text"
+            placeholder="Value"
+            value={pair.value}
+            onChange={handleValueChange}
+            className="pair-input"
+          />
+          <button
+            style={{ width: '100px' }}
+            onClick={() => onRemove(index)}
+            className="remove-button"
+          >
+            Remove
+          </button>
+          {pair.allowAdd && (
+            <button onClick={() => onAdd(index)}>Add Pair</button>
+          )}
+        </>
       )}
     </div>
   );
 }
 
+KeyValuePair.propTypes = {
+  index: PropTypes.number.isRequired,
+  pair: PropTypes.shape({
+    key: PropTypes.string,
+    value: PropTypes.string,
+    delimiter: PropTypes.string,
+    isPlainText: PropTypes.bool,
+    envGroup: PropTypes.string,
+    allowAdd: PropTypes.bool,
+  }).isRequired,
+  onChange: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  onAdd: PropTypes.func,
+};
 
 
 ⸻
