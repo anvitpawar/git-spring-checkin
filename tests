@@ -83,3 +83,52 @@ function parseProfileString(profileString) {
 ⸻
 
 Next: I’ll send the updated profileArrayToString that respects the env grouping and plain text. Shall I continue?
+
+
+Great — here’s Step 2: updated profileArrayToString that safely converts the structured array back to the profile string, respecting your delimiter logic and formatting.
+
+⸻
+
+✅ profileArrayToString — Handles:
+	•	Conversion from array back to profile string
+	•	Supports = or : delimiter
+	•	Skips empty keys
+	•	Preserves isPlainText lines as-is
+
+⸻
+
+
+
+function profileArrayToString(pairs) {
+  return pairs
+    .map((item) => {
+      if (item.isPlainText) return item.text;
+
+      const { key, value, delimiter } = item;
+
+      if (!key && !value) return '';
+      if (key && !value) return key;
+
+      if (delimiter === 'equal') {
+        return `export ${key}=${value}`;
+      } else if (delimiter === 'colon') {
+        return `export ${key}:${value}`;
+      }
+
+      return `export ${key}=${value}`; // default fallback
+    })
+    .join('\n');
+}
+
+
+
+⸻
+
+This will ensure:
+	•	APP_ and other exports are formatted properly
+	•	Environment group values show up cleanly
+	•	No extra lines or malformed exports
+
+⸻
+
+Next up: the core UI logic inside KeyValuePair.jsx — with add/remove buttons specific to environment blocks. Ready?
