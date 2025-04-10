@@ -1,21 +1,21 @@
+Absolutely — here are only the core parts you asked for: the parseProfileString, profileArrayToString, and the full KeyValuePair component, fully integrated with your existing logic.
+
+⸻
+
+✅ parseProfileString function
+
 function parseProfileString(str) {
-  return str.split('\n').map((line) => {
-    line = line.trim();
-    let key = '', value = '', delimiter = '';
-    let isPlainText = false;
+  if (!str) return [];
 
-    // Shell keywords or compound statements to treat as plain text
-    const shellPattern = /\b(if|fi|elif|else|then|do|done|while|for|echo|export|exit)\b/;
-    const compoundBashPattern = /(;|\[.*\]\s*;)/; // detect compound statements like: if [ .. ]; then
+  const lines = str.split('\n');
+  let currentEnv = null;
 
-    // Mark as plain text if it's a bash statement
-    if (shellPattern.test(line) || compoundBashPattern.test(line)) {
-      isPlainText = true;
-      return { key: line, value: '', delimiter: 'none', isPlainText };
-    }
+  return lines.map((line) => {
+    if (!line) return { key: '', value: '', isPlainText: true };
 
-    const colonIndex = line.indexOf(':');
+    let key = '', value = '', delimiter = 'none';
     const equalIndex = line.indexOf('=');
+    const colonIndex = line.indexOf(':');
 
     if (colonIndex !== -1) {
       key = line.slice(0, colonIndex).trim();
@@ -26,14 +26,118 @@ function parseProfileString(str) {
       value = line.slice(equalIndex + 1).trim();
       delimiter = 'equal';
     } else {
-      key = line;
-      delimiter = 'none';
+      key = line.trim();
     }
 
-    // Strip trailing "\" if present
-    if (key.startsWith('')) key = key.slice(1, -1);
-    if (value.endsWith(',\\')) value = value.slice(0, -2).trim();
+    // Detect environment blocks
+    if (key.startsWith('if') && key.includes('$env=dev')) currentEnv = 'dev';
+    else if (key.startsWith('elif') && key.includes('$env=sit')) currentEnv = 'sit';
+    else if (key.startsWith('elif') && key.includes('$env=uat')) currentEnv = 'uat';
+    else if (key.startsWith('else')) currentEnv = 'else';
+    else if (key.startsWith('fi')) currentEnv = null;
 
-    return { key, value, delimiter, isPlainText };
+    const isPlainText = (
+      delimiter === 'none' &&
+      (/^(if|elif|else|fi|then|do|done|while|for)\b/.test(key) ||
+       /^\s*\$\(.+\)/.test(value) ||
+       /^\s*echo\b/.test(line.trim()))
+    );
+
+    const allowAdd = key.startsWith('export APP_') || !!currentEnv;
+
+    return {
+      key,
+      value,
+      delimiter,
+      isPlainText,
+      envGroup: currentEnv,
+      allowAdd,
+    };
   });
 }
+
+
+
+⸻
+
+✅ profileArrayToString function
+
+function profileArrayToString(pairs) {
+  return pairs
+    .map(({ key, value, delimiter }) => {
+      if (key && value) {
+        if (delimiter === 'equal') return `${key}=${value}`;
+        if (delimiter === 'colon') return `${key}: ${value}`;
+      } else if (key && !value) {
+        return key;
+      }
+      return '';
+    })
+    .join('\n');
+}
+
+
+
+⸻
+
+✅ KeyValuePair.jsx
+
+import React from 'react';
+
+export default function KeyValuePair({ index, pair, onChange, onRemove, onAdd }) {
+  const handleKeyChange = (e) => {
+    onChange(index, { ...pair, key: e.target.value });
+  };
+
+  const handleValueChange = (e) => {
+    onChange(index, { ...pair, value: e.target.value });
+  };
+
+  if (!pair.key && !pair.value) {
+    return (
+      <div className="pair-separator" key={`separator-${index}`}>
+        <button onClick={() => onRemove(index)}>Remove</button>
+        {pair.allowAdd && (
+          <button onClick={() => onAdd(index)}>Add Pair</button>
+        )}
+        <hr style={{ margin: '10px 0', borderTop: '1px solid black' }} />
+      </div>
+    );
+  }
+
+  if (pair.isPlainText) {
+    return <pre style={{ background: '#f4f4f4', padding: '5px' }}>{pair.key}</pre>;
+  }
+
+  return (
+    <div className="pair-row" style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+      <input
+        type="text"
+        placeholder="Key"
+        value={pair.key}
+        onChange={handleKeyChange}
+        className="pair-input"
+        style={{ flex: 2 }}
+      />
+      <span className="colon-separator">=</span>
+      <input
+        type="text"
+        placeholder="Value"
+        value={pair.value}
+        onChange={handleValueChange}
+        className="pair-input"
+        style={{ flex: 2 }}
+      />
+      <button onClick={() => onRemove(index)}>Remove</button>
+      {pair.allowAdd && (
+        <button onClick={() => onAdd(index)}>Add Pair</button>
+      )}
+    </div>
+  );
+}
+
+
+
+⸻
+
+Let me know if you want these saved into downloadable files or want a dev → sit/uat/else sync preview toggle.
