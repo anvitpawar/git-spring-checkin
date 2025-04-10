@@ -234,3 +234,20 @@ export default KeyValuePair;
 ⸻
 
 Next, I’ll share how your ProfileEditor.jsx should handle the onAddPair and onRemovePair logic to update all items in a group. Want that part now?
+
+import PropTypes from 'prop-types';
+
+KeyValuePair.propTypes = {
+  pairs: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string,
+      value: PropTypes.string,
+      delimiter: PropTypes.oneOf(['equal', 'colon']),
+      isPlainText: PropTypes.bool,
+      envGroup: PropTypes.string,
+    })
+  ).isRequired,
+  onChange: PropTypes.func.isRequired,
+  onAddPair: PropTypes.func.isRequired,
+  onRemovePair: PropTypes.func.isRequired,
+};
