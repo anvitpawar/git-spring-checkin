@@ -1,0 +1,20 @@
+sno. automatic list
+
+DRT -> jirastroy intake - drtid
+
+Target object type - jirastroyintake - sorType if file then print file or else show table
+
+Target file name - jirastroyintake - sourceTableName (if object type = FILE) 
+
+Target schema name - jira story intake - targetschema
+
+Target tablename -> sourcetable sourceschema+tablename (remove .)
+
+Target column name - Sourcetable collection - columnName (each col name gets new col) 
+
+Schema evolution enabled - NO default
+
+Path - SOR collection
+Storagename +  / + tablename
+
+Comments - empty
